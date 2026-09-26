@@ -1,0 +1,995 @@
+[
+  {
+    "id": "chunk_ice_01",
+    "role_id": "backend_engineer",
+    "competency": "ice_breaker",
+    "stage": "ice_breaker",
+    "difficulty_level": 1,
+    "title": "Candidate Background and Core Engineering Motivation",
+    "content": "Ice-breaker context for backend software engineering interviews. The interviewer assesses how the candidate communicates their experience, key technologies they have used (e.g., Python, Node.js, databases), and their enthusiasm for building backend services.",
+    "expected_concepts": [
+      "project overview",
+      "backend tech stack",
+      "individual contribution",
+      "technical passion"
+    ],
+    "sample_questions": [
+      "Could you briefly walk us through your software engineering background and highlight a backend project you are most proud of?"
+    ],
+    "rubric": {
+      "poor": "Fails to articulate background, cannot name technologies used, or lacks clarity on role contribution.",
+      "acceptable": "Provides a coherent summary of experience, mentions languages/frameworks, and outlines a specific project.",
+      "excellent": "Clear, concise overview highlighting architecture, specific technical challenges overcome, and ownership in past projects."
+    },
+    "source": "Curated-Icebreaker-Bank"
+  },
+  {
+    "id": "chunk_ice_02",
+    "role_id": "backend_engineer",
+    "competency": "ice_breaker",
+    "stage": "ice_breaker",
+    "difficulty_level": 1,
+    "title": "Recent Technical Learning and Tooling",
+    "content": "Warm-up assessment focusing on how candidate keeps updated with backend trends, modern tooling, or an interesting engineering problem they solved recently.",
+    "expected_concepts": [
+      "continuous learning",
+      "recent tech stack",
+      "debugging or optimization example"
+    ],
+    "sample_questions": [
+      "What is an interesting technical challenge or new framework you worked with recently, and why did you choose it?"
+    ],
+    "rubric": {
+      "poor": "Cannot recall any recent learning or talks about unrelated non-technical items.",
+      "acceptable": "Mentions a tool or library recently explored and gives basic reasoning for using it.",
+      "excellent": "Demonstrates genuine curiosity, explains technical trade-offs of the tool, and articulates practical takeaways."
+    },
+    "source": "Curated-Icebreaker-Bank"
+  },
+  {
+    "id": "chunk_fund_rest_01",
+    "role_id": "backend_engineer",
+    "competency": "backend",
+    "stage": "fundamentals",
+    "difficulty_level": 2,
+    "title": "REST API Architecture and HTTP Semantics",
+    "content": "REST (Representational State Transfer) is an architectural style utilizing stateless communication over HTTP. Fundamental concepts include standard HTTP verbs (GET, POST, PUT, PATCH, DELETE), proper HTTP status codes (200 OK, 201 Created, 400 Bad Request, 401 Unauthorized, 404 Not Found, 500 Internal Error), resource-oriented URIs, idempotency (PUT and DELETE should be idempotent; POST is typically non-idempotent), and stateless session handling.",
+    "expected_concepts": [
+      "statelessness",
+      "HTTP verbs (GET, POST, PUT, DELETE)",
+      "status codes",
+      "idempotency",
+      "resource URI conventions"
+    ],
+    "sample_questions": [
+      "Explain the key architectural constraints of REST APIs and how HTTP verbs differ in terms of idempotency and safety."
+    ],
+    "rubric": {
+      "poor": "Cannot distinguish between POST and PUT or explains HTTP verbs incorrectly.",
+      "acceptable": "Explains statelessness, resource naming, and correctly differentiates GET, POST, and PUT idempotency.",
+      "excellent": "Thorough explanation of REST constraints, idempotency guarantees, RFC status code nuances (e.g. 200 vs 204 vs 201), and caching headers (ETag, Cache-Control)."
+    },
+    "source": "Web-Architecture-Standards-RFC7231"
+  },
+  {
+    "id": "chunk_fund_oop_01",
+    "role_id": "backend_engineer",
+    "competency": "cs_fundamentals",
+    "stage": "fundamentals",
+    "difficulty_level": 2,
+    "title": "OOP Principles and Clean Code Abstraction",
+    "content": "Object-Oriented Programming (OOP) and SOLID design principles form the backbone of maintainable backend code. Key concepts: Encapsulation (hiding internal state behind interfaces), Inheritance vs Composition (composition preferred for loose coupling), Polymorphism (runtime method dispatch), and Single Responsibility Principle (each class has one reason to change). Dependency Injection allows loose coupling and simplifies unit testing.",
+    "expected_concepts": [
+      "encapsulation",
+      "polymorphism",
+      "inheritance vs composition",
+      "SOLID principles",
+      "dependency injection"
+    ],
+    "sample_questions": [
+      "Why is composition often favored over inheritance in modern backend architecture, and how does Dependency Injection support clean code?"
+    ],
+    "rubric": {
+      "poor": "Recites textbook definitions without understanding or confuses polymorphism with inheritance.",
+      "acceptable": "Explains why deep inheritance hierarchies cause fragile base class problems and shows how composition or DI aids testability.",
+      "excellent": "Provides concrete examples where inheritance fails, details interface segregation and dependency inversion with realistic backend service layers."
+    },
+    "source": "Software-Design-Patterns-GangOfFour"
+  },
+  {
+    "id": "chunk_fund_db_01",
+    "role_id": "backend_engineer",
+    "competency": "database",
+    "stage": "fundamentals",
+    "difficulty_level": 2,
+    "title": "Relational Database Fundamentals and ACID Properties",
+    "content": "Relational databases (PostgreSQL, MySQL) guarantee data integrity via ACID: Atomicity (all-or-nothing transactions), Consistency (invariants and constraints preserved), Isolation (concurrent transactions execute without interference), and Durability (committed data survives crashes via Write-Ahead Logging/WAL). Normalization (1NF, 2NF, 3NF) minimizes data redundancy.",
+    "expected_concepts": [
+      "ACID properties",
+      "Atomicity",
+      "Consistency",
+      "Isolation",
+      "Durability",
+      "WAL",
+      "Normalization"
+    ],
+    "sample_questions": [
+      "What are the ACID properties in database management systems, and how does the database ensure Atomicity and Durability during a system crash?"
+    ],
+    "rubric": {
+      "poor": "Cannot name the four ACID properties accurately or explain what a transaction is.",
+      "acceptable": "Defines each ACID property clearly and explains rollback on failure.",
+      "excellent": "Deep understanding including Write-Ahead Logging (WAL), transaction checkpoints, and dirty read prevention."
+    },
+    "source": "Database-System-Concepts-Silberschatz"
+  },
+  {
+    "id": "chunk_tech_auth_01",
+    "role_id": "backend_engineer",
+    "competency": "backend",
+    "stage": "role_technical",
+    "difficulty_level": 3,
+    "title": "API Authentication, JWT, and Session Security",
+    "content": "Stateless authentication in backend microservices typically leverages JSON Web Tokens (JWT) or OAuth2/OIDC. A JWT consists of Header, Payload, and Signature (HMAC-SHA256 or RSA/ECDSA). Key architectural considerations: Access token expiration (short-lived, e.g. 15 minutes) paired with secure Refresh Tokens stored in HTTP-only, SameSite Secure cookies to prevent XSS and CSRF attacks. Token revocation mechanisms include Redis blacklists or database token versions.",
+    "expected_concepts": [
+      "JWT structure",
+      "header payload signature",
+      "short-lived access tokens",
+      "refresh token rotation",
+      "httpOnly cookies",
+      "revocation strategy"
+    ],
+    "sample_questions": [
+      "How would you design a secure token-based authentication system using JWTs, and how do you handle token revocation when a user logs out?"
+    ],
+    "rubric": {
+      "poor": "Suggests storing sensitive secrets in JWT payload or believes JWTs cannot be revoked without changing the secret key globally.",
+      "acceptable": "Explains JWT structure, short expiration with refresh tokens, and mentions a blacklist or database flag for revocation.",
+      "excellent": "Addresses XSS/CSRF mitigations, refresh token rotation with reuse detection, and distributed revocation patterns using Redis TTL."
+    },
+    "source": "OWASP-API-Security-Top10"
+  },
+  {
+    "id": "chunk_tech_idx_01",
+    "role_id": "backend_engineer",
+    "competency": "database",
+    "stage": "role_technical",
+    "difficulty_level": 3,
+    "title": "Database Indexing, B-Trees, and Query Optimization",
+    "content": "Database indexes speed up data retrieval at the expense of write latency and disk space. Most relational engines use B-Tree (or B+ Tree) indexes, providing O(log N) lookup, insertion, and range queries. Composite indexes follow the Leftmost Prefix Rule. A sequential table scan is preferred by the query planner when table cardinality is very low or when a large percentage of rows must be fetched. Index maintenance overhead impacts write-heavy workloads.",
+    "expected_concepts": [
+      "B-Tree / B+ Tree",
+      "logarithmic search time",
+      "composite index",
+      "leftmost prefix rule",
+      "write amplification overhead",
+      "EXPLAIN execution plan"
+    ],
+    "sample_questions": [
+      "What is the difference between an SQL index lookup and a table scan, and why does adding an index speed up reads while slowing down writes?"
+    ],
+    "rubric": {
+      "poor": "Cannot explain how an index works or claims indexes speed up all operations including bulk inserts.",
+      "acceptable": "Explains B-Tree pointer lookups vs scanning every disk page, noting tree update overhead during insert/update.",
+      "excellent": "Discusses B+ Tree leaf node linked lists for range queries, composite index ordering, index selectivity, and analyzing EXPLAIN ANALYZE output."
+    },
+    "source": "High-Performance-MySQL-OReilly"
+  },
+  {
+    "id": "chunk_tech_cache_01",
+    "role_id": "backend_engineer",
+    "competency": "system_design",
+    "stage": "role_technical",
+    "difficulty_level": 3,
+    "title": "Distributed Caching Strategies and Invalidation",
+    "content": "Caching reduces database load and network latency by storing hot data in in-memory stores like Redis or Memcached. Common caching patterns: Cache-Aside (Lazy Loading), Read-Through, Write-Through, and Write-Behind (Write-Back). Cache invalidation challenges include Cache Penetration (queries for non-existent keys, solved via bloom filters or caching nulls), Cache Stampede / Thundering Herd (mutex locks or probabilistic early expiration), and Cache Avalanche (randomized TTL jitter).",
+    "expected_concepts": [
+      "Cache-Aside pattern",
+      "Write-Through vs Write-Back",
+      "TTL expiration",
+      "Cache Stampede",
+      "Cache Penetration",
+      "Redis in-memory store"
+    ],
+    "sample_questions": [
+      "Compare Cache-Aside and Write-Through caching patterns, and explain how you would prevent a cache stampede when a popular key expires."
+    ],
+    "rubric": {
+      "poor": "Cannot define basic caching patterns or doesn't know what TTL is.",
+      "acceptable": "Contrasts cache-aside with write-through and suggests locking or probabilistic re-fetching for expiring keys.",
+      "excellent": "Comprehensive analysis of stale-while-revalidate, distributed mutexes via Redis Redlock, jittered TTLs, and cache warming strategies."
+    },
+    "source": "Designing-Data-Intensive-Applications-Kleppmann"
+  },
+  {
+    "id": "chunk_tech_async_01",
+    "role_id": "backend_engineer",
+    "competency": "backend",
+    "stage": "role_technical",
+    "difficulty_level": 3,
+    "title": "Asynchronous Processing and Message Queues",
+    "content": "Decoupling long-running tasks from synchronous HTTP request-response cycles improves system responsiveness and fault tolerance. Message brokers (RabbitMQ, Apache Kafka, Amazon SQS) enable asynchronous background workers. Critical concepts include Message Durability, At-least-once delivery, Consumer Idempotency (preventing duplicate processing through deduplication keys), Dead Letter Queues (DLQs) for unhandled errors, and backpressure management.",
+    "expected_concepts": [
+      "decoupling",
+      "message broker",
+      "consumer idempotency",
+      "dead letter queue (DLQ)",
+      "at-least-once delivery",
+      "backpressure"
+    ],
+    "sample_questions": [
+      "Why should email sending or report generation be offloaded to a message queue, and how do you ensure messages are not processed twice?"
+    ],
+    "rubric": {
+      "poor": "Proposes running slow operations synchronously in the HTTP request handler thread.",
+      "acceptable": "Explains offloading tasks to background workers via queues and using a unique message ID for deduplication.",
+      "excellent": "Deep discussion on consumer idempotency strategies (idempotent DB upserts, distributed locks), DLQ retry policies, and ACK/NACK mechanics."
+    },
+    "source": "Enterprise-Integration-Patterns-Hohpe"
+  },
+  {
+    "id": "chunk_deep_db_trans_01",
+    "role_id": "backend_engineer",
+    "competency": "database",
+    "stage": "deep_dive",
+    "difficulty_level": 4,
+    "title": "Transaction Isolation Levels and Concurrency Anomalies",
+    "content": "ANSI SQL defines four isolation levels to balance concurrency against consistency: Read Uncommitted, Read Committed, Repeatable Read, and Serializable. Concurrency anomalies: Dirty Read (reading uncommitted data), Non-Repeatable Read (row values change between reads in the same transaction), and Phantom Read (new rows matching a WHERE range appear). Implementations use Two-Phase Locking (2PL) or Multi-Version Concurrency Control (MVCC) with snapshot isolation.",
+    "expected_concepts": [
+      "Read Committed",
+      "Repeatable Read",
+      "Serializable",
+      "MVCC (Multi-Version Concurrency Control)",
+      "Dirty Read",
+      "Phantom Read",
+      "Snapshot Isolation"
+    ],
+    "sample_questions": [
+      "What is the difference between Repeatable Read and Serializable isolation levels, and how does MVCC allow concurrent reads without locking writes?"
+    ],
+    "rubric": {
+      "poor": "Cannot explain the difference between dirty read and non-repeatable read.",
+      "acceptable": "Identifies phantom read anomaly and explains that Repeatable Read locks or snapshots row versions.",
+      "excellent": "Explains MVCC transaction IDs (xmin/xmax in PostgreSQL), undo logs, write skew in snapshot isolation, and serialize conflict detection."
+    },
+    "source": "Database-Internals-Petrov"
+  },
+  {
+    "id": "chunk_deep_jwt_sec_01",
+    "role_id": "backend_engineer",
+    "competency": "backend",
+    "stage": "deep_dive",
+    "difficulty_level": 4,
+    "title": "Distributed Token Invalidation and Cryptographic Trade-offs",
+    "content": "While JWTs enable stateless authentication without querying a central session database on every request, immediate revocation poses a major architectural dilemma. Solutions include: (1) Setting very short lifetimes (e.g. 5 minutes) and accepting a brief delay in revocation, (2) Distributed deny-list stored in Redis with TTL equal to remaining token lifetime, (3) User token version / epoch stored in user profile and verified on critical mutations. Asymmetric signing (RS256) allows microservices to verify tokens with a public key without sharing the private signing key.",
+    "expected_concepts": [
+      "statelessness trade-off",
+      "token revocation dilemma",
+      "Redis blacklist with TTL",
+      "token epoch / versioning",
+      "RS256 public-private keys",
+      "JWKS endpoint"
+    ],
+    "sample_questions": [
+      "JWTs are designed to be stateless, but security audits often mandate instant token revocation upon logout. How do you resolve this architectural contradiction in a high-scale microservices system?"
+    ],
+    "rubric": {
+      "poor": "Suggests querying the relational database on every single microservice call, nullifying all benefits of JWT without understanding.",
+      "acceptable": "Proposes a Redis-based distributed blocklist or maintaining a token revision integer checked during security-sensitive actions.",
+      "excellent": "Thoroughly analyzes trade-offs: latency impact of shared Redis checks, asymmetric key caching via JWKS, and event-driven invalidation broadcasts."
+    },
+    "source": "Modern-Web-Security-Microservices"
+  },
+  {
+    "id": "chunk_deep_sys_scale_01",
+    "role_id": "backend_engineer",
+    "competency": "system_design",
+    "stage": "deep_dive",
+    "difficulty_level": 4,
+    "title": "Horizontal Scaling, State Management, and Sharding",
+    "content": "Scaling backend applications horizontally requires stateless application tiers and partitioning data layers. Techniques include Consistent Hashing for distributed caches and database sharding keys. Sharding introduces challenges: cross-shard joins, distributed transactions (Two-Phase Commit vs Saga pattern), and resharding hot partitions. Load balancers distribute traffic using round-robin, least connections, or IP hash.",
+    "expected_concepts": [
+      "stateless application layer",
+      "database sharding",
+      "shard key selection",
+      "consistent hashing",
+      "Saga pattern vs 2PC",
+      "cross-shard queries"
+    ],
+    "sample_questions": [
+      "When sharding a multi-tenant relational database, what criteria dictate your shard key selection, and how do you handle cross-shard queries?"
+    ],
+    "rubric": {
+      "poor": "Cannot explain what database sharding is or confuses it with replication.",
+      "acceptable": "Explains choosing a tenant_id or user_id as shard key to keep related data co-located and avoid cross-shard joins.",
+      "excellent": "Addresses hot tenant imbalances, virtual nodes in consistent hashing, scatter-gather query aggregation overhead, and eventual consistency via asynchronous events."
+    },
+    "source": "Designing-Distributed-Systems-Burns"
+  },
+  {
+    "id": "chunk_scen_prod_diag_01",
+    "role_id": "backend_engineer",
+    "competency": "scenario_managerial",
+    "stage": "scenario_managerial",
+    "difficulty_level": 4,
+    "title": "Production Incident Triage and Slow Query Diagnostics",
+    "content": "When a production backend experiences intermittent 504 Gateway Timeouts and CPU spikes, an engineer must methodically isolate the root cause. Steps: (1) Check metrics (CPU, RAM, DB connection pool saturation, network I/O), (2) Inspect APM traces and slow query logs, (3) Determine if sudden traffic spike, missing index, lock contention, or memory leak occurred, (4) Mitigate immediate user impact (scale instances, enable circuit breaker, kill runaway locks), (5) Conduct blameless post-mortem and add regression guards.",
+    "expected_concepts": [
+      "metrics and monitoring (CPU, DB connections)",
+      "APM tracing",
+      "slow query logs",
+      "mitigation before root cause fix",
+      "circuit breaker",
+      "blameless post-mortem"
+    ],
+    "sample_questions": [
+      "A critical production API endpoint suddenly starts returning intermittent 504 Gateway Timeouts during peak hours. Walk us step-by-step through how you would triage, mitigate, and resolve this incident."
+    ],
+    "rubric": {
+      "poor": "Immediately suggests rewriting code or restarts servers blindly without inspecting logs or connection pools.",
+      "acceptable": "Systematic approach: check APM metrics, slow database queries, connection pool limits, roll back recent deploy if applicable, and isolate the bottleneck.",
+      "excellent": "Exemplary incident management: immediate mitigation (rate limiting/read replica offloading), systematic telemetry triage (APM, thread dumps, DB locks), and permanent prevention (indexing, alerts, post-mortem)."
+    },
+    "source": "Google-Site-Reliability-Engineering"
+  },
+  {
+    "id": "chunk_scen_techdebt_01",
+    "role_id": "backend_engineer",
+    "competency": "scenario_managerial",
+    "stage": "scenario_managerial",
+    "difficulty_level": 4,
+    "title": "Technical Debt Prioritization and Stakeholder Negotiation",
+    "content": "Engineers frequently face trade-offs between shipping new business features and refactoring brittle backend architecture. Demonstrates ability to quantify technical debt impact in terms of business risk, incident frequency, developer velocity, and system availability. Communicates with product managers using shared business metrics rather than purely abstract code quality complaints.",
+    "expected_concepts": [
+      "quantifying tech debt",
+      "business risk and developer velocity",
+      "incremental refactoring",
+      "stakeholder negotiation",
+      "strangler fig pattern"
+    ],
+    "sample_questions": [
+      "Product management is pushing to ship a major new feature, but your core API has accumulated significant technical debt that risks system stability. How do you approach this conversation and prioritize the engineering work?"
+    ],
+    "rubric": {
+      "poor": "Adopts an adversarial stance against product goals or ignores technical debt completely.",
+      "acceptable": "Explains risks to product manager in terms of potential downtime and proposes allocating a percentage of sprint capacity to refactoring.",
+      "excellent": "Demonstrates empathetic leadership: frames debt in terms of business impact (MTTR, cost of delay), advocates incremental patterns (Strangler Fig), and aligns engineering reliability with product roadmap."
+    },
+    "source": "Leading-Snowflakes-Leadership-Engineering"
+  },
+  {
+    "id": "chunk_fund_os_01",
+    "role_id": "backend_engineer",
+    "competency": "cs_fundamentals",
+    "stage": "fundamentals",
+    "difficulty_level": 2,
+    "title": "Processes, Threads, and Concurrency Models",
+    "content": "A process has its own dedicated virtual address space and memory descriptors. Threads within the same process share heap memory, open file descriptors, and global variables, but have independent stacks and program counters. Concurrency models include multi-threading with mutex locks, event loops with non-blocking I/O (Node.js, Python asyncio), and actor models (Erlang/Akka). Race conditions occur when shared mutable state is accessed without synchronization.",
+    "expected_concepts": [
+      "process vs thread",
+      "shared heap vs private stack",
+      "context switching",
+      "race condition",
+      "event loop vs worker threads"
+    ],
+    "sample_questions": [
+      "How do processes and threads differ in memory allocation, and how does an event-loop concurrency model compare to a multi-threaded server model?"
+    ],
+    "rubric": {
+      "poor": "Confuses process memory boundaries with thread stacks or cannot describe a race condition.",
+      "acceptable": "Explains shared heap vs individual stacks and contrasts thread blocking with asynchronous non-blocking event loops.",
+      "excellent": "Details context switching overhead, kernel vs user space threads, GIL in Python/Ruby, and thread pool exhaustion vs event loop starvation."
+    },
+    "source": "Operating-Systems-Three-Easy-Pieces"
+  },
+  {
+    "id": "chunk_tech_ratelimit_01",
+    "role_id": "backend_engineer",
+    "competency": "backend",
+    "stage": "role_technical",
+    "difficulty_level": 3,
+    "title": "API Rate Limiting Algorithms and Throttling",
+    "content": "Rate limiting protects backend APIs from abuse, denial of service, and cascading service failures. Core algorithms: (1) Fixed Window Counter (burst boundary vulnerability), (2) Sliding Window Log (accurate but high memory usage), (3) Sliding Window Counter (balanced approximation), (4) Token Bucket and Leaky Bucket (allows configurable bursts while enforcing a steady egress rate). Distributed implementations store buckets in Redis with atomic Lua scripts.",
+    "expected_concepts": [
+      "Token Bucket",
+      "Leaky Bucket",
+      "Sliding Window Counter",
+      "HTTP 429 Too Many Requests",
+      "Retry-After header",
+      "Redis Lua atomic execution"
+    ],
+    "sample_questions": [
+      "Compare the Token Bucket and Leaky Bucket algorithms for API rate limiting, and explain how you would implement a distributed rate limiter using Redis."
+    ],
+    "rubric": {
+      "poor": "Cannot explain how a rate limiter operates or returns 500 error instead of 429.",
+      "acceptable": "Contrasts burst handling in token bucket vs steady output in leaky bucket, and mentions Redis keys with expiration.",
+      "excellent": "Explains race conditions in distributed counters, atomic Lua script execution in Redis, and standard RFC rate limit response headers."
+    },
+    "source": "System-Design-Interview-Alex-Xu"
+  },
+  {
+    "id": "chunk_deep_cap_01",
+    "role_id": "backend_engineer",
+    "competency": "system_design",
+    "stage": "deep_dive",
+    "difficulty_level": 4,
+    "title": "The CAP Theorem, PACELC, and Eventual Consistency",
+    "content": "The CAP Theorem states that in the presence of a network partition (P), a distributed system must choose between Consistency (C: every read receives the most recent write or an error) and Availability (A: every non-failing node returns a response). PACELC extends CAP: If there is a Partition (P), trade off Availability (A) and Consistency (C); Else (E), trade off Latency (L) and Consistency (C). Systems like Cassandra favor AP with eventual consistency, while Spanner or Zookeeper favor CP with consensus protocols (Raft/Paxos).",
+    "expected_concepts": [
+      "CAP Theorem",
+      "Network Partition",
+      "Consistency vs Availability",
+      "PACELC",
+      "Eventual Consistency",
+      "Consensus protocols (Raft/Paxos)"
+    ],
+    "sample_questions": [
+      "In a distributed system experiencing a network partition between two data centers, explain the exact trade-off between Consistency and Availability under the CAP theorem."
+    ],
+    "rubric": {
+      "poor": "Claims a system can have all three (C, A, and P) simultaneously in a real network.",
+      "acceptable": "Explains that network partitions are unavoidable and shows how CP rejects writes while AP returns potentially stale data.",
+      "excellent": "Nuanced analysis using PACELC theorem, quorum read/write math (R + W > N), read repair, and vector clocks."
+    },
+    "source": "Brewer-CAP-Theorem-PACELC-Abadi"
+  },
+  {
+    "id": "chunk_fund_git_01",
+    "role_id": "backend_engineer",
+    "competency": "cs_fundamentals",
+    "stage": "fundamentals",
+    "difficulty_level": 1,
+    "title": "Version Control Workflows and Branching Strategies",
+    "content": "Professional software teams employ Git branching models (Trunk-Based Development, GitFlow) to collaborate cleanly. Key concepts: Merge vs Rebase (linear history vs preserving commit graph), resolving merge conflicts, squash commits for clean feature PRs, and continuous integration pipelines triggering automated tests on pull requests.",
+    "expected_concepts": [
+      "merge vs rebase",
+      "pull request workflow",
+      "trunk-based development",
+      "conflict resolution",
+      "automated CI checks"
+    ],
+    "sample_questions": [
+      "What is the difference between git merge and git rebase, and when would you choose one over the other in a collaborative team repo?"
+    ],
+    "rubric": {
+      "poor": "Cannot explain what a git conflict is or doesn't know what rebase does.",
+      "acceptable": "Explains that rebase rewrites commit history to maintain a linear log while merge preserves actual commit topology.",
+      "excellent": "Cites the golden rule of rebase (never rebase shared public branches), discusses squash merges, and explains how trunk-based development shortens feedback loops."
+    },
+    "source": "Pro-Git-Chacon-Straub"
+  },
+  {
+    "id": "chunk_tech_db_connpool_01",
+    "role_id": "backend_engineer",
+    "competency": "database",
+    "stage": "role_technical",
+    "difficulty_level": 3,
+    "title": "Database Connection Pooling and Resource Starvation",
+    "content": "Opening a new database TCP connection and performing SSL/authentication handshakes is computationally expensive. Connection pools (HikariCP, pgpool, SQLAlchemy pool) maintain a pool of warm connections. Key parameters: Maximum Pool Size, Minimum Idle Connections, Connection Timeout, and Idle Timeout. Sizing formula: connections = ((core_count * 2) + effective_spindle_count). Common failure mode is connection pool exhaustion caused by slow queries or unclosed connections.",
+    "expected_concepts": [
+      "connection pool",
+      "TCP/TLS handshake overhead",
+      "pool exhaustion",
+      "connection timeout",
+      "HikariCP sizing principles"
+    ],
+    "sample_questions": [
+      "Why is opening a new database connection for every incoming HTTP request detrimental, and how do you configure a connection pool to avoid resource exhaustion?"
+    ],
+    "rubric": {
+      "poor": "Believes setting max connection pool to 10,000 solves performance issues.",
+      "acceptable": "Explains connection handshake latency and why reuse through a pool protects the database from CPU/memory thrashing.",
+      "excellent": "References queueing theory, disk spindle/CPU core sizing heuristics, leak detection thresholds, and proxy pooling like PgBouncer."
+    },
+    "source": "PostgreSQL-High-Availability-Cookbook"
+  },
+  {
+    "id": "chunk_scen_migration_01",
+    "role_id": "backend_engineer",
+    "competency": "scenario_managerial",
+    "stage": "scenario_managerial",
+    "difficulty_level": 4,
+    "title": "Zero-Downtime Database Schema Migrations",
+    "content": "Changing schema in a high-traffic production database without downtime requires phased migrations. Dangerous operations include column renames, adding NOT NULL columns without default values, and large table locks. The Expand and Contract (Parallel Run) pattern executes migration in steps: (1) Add new nullable column, (2) Dual-write to old and new columns, (3) Backfill historical data in batches, (4) Switch reads to new column, (5) Deprecate and drop old column.",
+    "expected_concepts": [
+      "zero-downtime migration",
+      "Expand and Contract pattern",
+      "table lock avoidance",
+      "dual-writing",
+      "batch backfill",
+      "backward compatibility"
+    ],
+    "sample_questions": [
+      "You need to rename and restructure a critical user profile column in a database handling 10,000 queries per second without any maintenance window or downtime. How do you execute this migration?"
+    ],
+    "rubric": {
+      "poor": "Suggests running ALTER TABLE RENAME COLUMN directly during peak hours, locking the table and crashing API servers.",
+      "acceptable": "Proposes creating the new column first, dual writing, backfilling data, and updating application reads before dropping the old column.",
+      "excellent": "Comprehensive rollout plan detailing lock timeout guards, asynchronous backfill scripts with throttling, backward-compatible API deploys, and automated rollback points."
+    },
+    "source": "Refactoring-Databases-Evolutionary-Database-Design"
+  },
+  {
+    "id": "chunk_fund_net_01",
+    "role_id": "backend_engineer",
+    "competency": "cs_fundamentals",
+    "stage": "fundamentals",
+    "difficulty_level": 3,
+    "title": "TCP 3-Way Handshake, Connection Teardown, and TIME_WAIT",
+    "content": "Transmission Control Protocol (TCP) provides reliable, ordered, and error-checked delivery of octets between applications. Establishing a connection requires SYN, SYN-ACK, ACK. Closing a connection involves FIN, ACK, FIN, ACK. The TIME_WAIT state prevents delayed packets from an old connection from corrupting a new connection; default duration is 2 * MSL (Maximum Segment Lifetime). High connection churn can cause ephemeral port exhaustion.",
+    "expected_concepts": [
+      "SYN SYN-ACK ACK",
+      "FIN ACK",
+      "TIME_WAIT state",
+      "Maximum Segment Lifetime (MSL)",
+      "ephemeral port exhaustion",
+      "TCP keepalive"
+    ],
+    "sample_questions": [
+      "Walk through the TCP 3-way handshake and connection teardown. Why does the TIME_WAIT socket state exist and how can it impact a high-throughput backend server?"
+    ],
+    "rubric": {
+      "poor": "Cannot describe the 3-way handshake steps or doesn't know what SYN and ACK stand for.",
+      "acceptable": "Accurately outlines SYN, SYN-ACK, ACK and explains that TIME_WAIT ensures the final ACK is received.",
+      "excellent": "Deep technical explanation of TIME_WAIT lingering duplicate packet prevention, socket reuse (SO_REUSEADDR), and port exhaustion mitigations."
+    },
+    "source": "TCP-IP-Illustrated-Stevens"
+  },
+  {
+    "id": "chunk_tech_lb_01",
+    "role_id": "backend_engineer",
+    "competency": "system_design",
+    "stage": "fundamentals",
+    "difficulty_level": 2,
+    "title": "Load Balancing Algorithms and Layer 4 vs Layer 7 Routing",
+    "content": "Load balancers distribute network or application traffic across a cluster of backend servers. Layer 4 (Transport layer, TCP/UDP) balances traffic based on IP address and port without inspecting packet payload, providing high throughput. Layer 7 (Application layer, HTTP/HTTPS) inspects HTTP headers, cookies, and URI paths to make intelligent routing decisions (e.g., path-based routing, SSL termination, sticky sessions). Algorithms include Round Robin, Weighted Round Robin, Least Connections, and Consistent Hash.",
+    "expected_concepts": [
+      "Layer 4 vs Layer 7",
+      "SSL termination",
+      "round robin vs least connections",
+      "sticky sessions",
+      "health checks"
+    ],
+    "sample_questions": [
+      "What is the difference between Layer 4 and Layer 7 load balancing, and when would you choose path-based routing over transport-level balancing?"
+    ],
+    "rubric": {
+      "poor": "Confuses OSI layers or does not understand the difference between IP packets and HTTP requests.",
+      "acceptable": "Explains that L4 routes based on TCP ports while L7 inspects HTTP URLs and headers.",
+      "excellent": "Discusses CPU overhead of TLS termination at L7, gRPC HTTP/2 stream multiplexing considerations, and dynamic routing architectures."
+    },
+    "source": "NGINX-Architecture-Guide"
+  },
+  {
+    "id": "chunk_deep_resilience_01",
+    "role_id": "backend_engineer",
+    "competency": "backend",
+    "stage": "deep_dive",
+    "difficulty_level": 5,
+    "title": "Distributed Fault Tolerance: Circuit Breakers, Bulkheads, and Fallbacks",
+    "content": "In distributed microservices, downstream failures can trigger cascading failures across the entire cluster. Stability patterns protect services: (1) Circuit Breaker (Closed, Open, Half-Open states) stops sending traffic to an unhealthy dependency, (2) Bulkheads isolate resource pools (e.g. separate thread pools or connection limits per client) so one failing client cannot consume all server capacity, (3) Exponential backoff with full jitter avoids synchronized retry storms, and (4) Graceful degradation returns cached or default fallback data.",
+    "expected_concepts": [
+      "Circuit Breaker pattern (Closed/Open/Half-Open)",
+      "Bulkhead isolation",
+      "exponential backoff with jitter",
+      "cascading failure prevention",
+      "graceful degradation"
+    ],
+    "sample_questions": [
+      "In a microservices ecosystem where Service A depends on Service B, how do the Circuit Breaker and Bulkhead patterns prevent Service B\u2019s slowdown from bringing down Service A?"
+    ],
+    "rubric": {
+      "poor": "Suggests infinite retries or cannot explain what a circuit breaker does.",
+      "acceptable": "Explains the three states of a circuit breaker and describes isolating thread pools to prevent exhaustion.",
+      "excellent": "Detailed discussion of failure rate threshold tuning, half-open probe requests, jittered backoff formulas, and designing graceful UI fallbacks."
+    },
+    "source": "Release-It-Nygard"
+  },
+  {
+    "id": "chunk_deep_cqrs_01",
+    "role_id": "backend_engineer",
+    "competency": "system_design",
+    "stage": "deep_dive",
+    "difficulty_level": 5,
+    "title": "Event Sourcing and Command Query Responsibility Segregation (CQRS)",
+    "content": "CQRS separates read and write operations into distinct models, optimizing read queries (e.g. ElasticSearch/Redis denormalized views) and write commands independently. Event Sourcing models state as an append-only log of immutable business events rather than storing current state in-place. State is reconstructed by replaying events or snapshots. Trade-offs include eventual consistency between write and read models, projection replay performance, and schema evolution of immutable events.",
+    "expected_concepts": [
+      "CQRS",
+      "Event Sourcing",
+      "append-only event log",
+      "read/write model separation",
+      "eventual consistency",
+      "snapshotting",
+      "event versioning"
+    ],
+    "sample_questions": [
+      "What core architectural challenges arise when implementing Event Sourcing and CQRS, specifically regarding eventual consistency and event schema evolution over time?"
+    ],
+    "rubric": {
+      "poor": "Cannot define CQRS or confuses it with regular database replication.",
+      "acceptable": "Explains that writes append immutable events and read models are asynchronously updated, acknowledging read lag.",
+      "excellent": "Provides in-depth solutions for schema evolution (Upcasters, schema versioning), read-your-own-writes synchronization, and snapshotting strategies."
+    },
+    "source": "Martin-Fowler-CQRS-Architecture"
+  },
+  {
+    "id": "chunk_scen_codereview_01",
+    "role_id": "backend_engineer",
+    "competency": "scenario_managerial",
+    "stage": "scenario_managerial",
+    "difficulty_level": 3,
+    "title": "Constructive Code Reviews and Engineering Standards",
+    "content": "Code review is essential for code quality, knowledge sharing, and mentorship. Constructive reviews focus on architectural patterns, edge cases, test coverage, and security, while automating stylistic formatting via linters. When disagreements arise regarding implementation choices, engineers should align on objective technical trade-offs (performance, readability, maintainability) and avoid bikeshedding or dogmatic arguments.",
+    "expected_concepts": [
+      "constructive feedback",
+      "separating style from architecture",
+      "test coverage and edge cases",
+      "conflict resolution",
+      "knowledge sharing"
+    ],
+    "sample_questions": [
+      "A junior developer submits a PR with working functionality that violates clean architecture patterns and lacks tests. How do you structure your review to mentor them without blocking team velocity?"
+    ],
+    "rubric": {
+      "poor": "Leaves harsh, dismissive comments or rewrites the code silently without explanation.",
+      "acceptable": "Points out missing tests and explains why the architecture should be improved, suggesting concrete alternatives.",
+      "excellent": "Exemplary mentorship: distinguishes blocking architectural concerns from non-blocking suggestions, explains the reason behind design principles, and offers pair programming support."
+    },
+    "source": "Smartbear-Best-Practices-Code-Review"
+  },
+  {
+    "id": "chunk_fund_mem_01",
+    "role_id": "backend_engineer",
+    "competency": "cs_fundamentals",
+    "stage": "role_technical",
+    "difficulty_level": 3,
+    "title": "Memory Management: Stack, Heap, and Garbage Collection",
+    "content": "Understanding how runtime environments allocate and reclaim memory is critical for preventing memory leaks and latency pauses. The Stack handles static memory, function frames, and primitive local variables in LIFO order with zero fragmentation. The Heap holds dynamically allocated objects and requires Garbage Collection (GC) or manual deallocation. Modern runtimes (V8, JVM, Go, Python) use generational garbage collection (young/old generation), mark-and-sweep, or reference counting with cycle detection.",
+    "expected_concepts": [
+      "stack vs heap",
+      "garbage collection (GC)",
+      "generational GC",
+      "mark-and-sweep",
+      "memory leaks",
+      "stop-the-world pauses"
+    ],
+    "sample_questions": [
+      "How do stack and heap memory allocations differ, and how does a generational garbage collector minimize stop-the-world pause times in high-throughput applications?"
+    ],
+    "rubric": {
+      "poor": "Cannot distinguish between stack and heap or thinks stack memory must be manually freed.",
+      "acceptable": "Explains that stack is for local variables and heap is for dynamic objects, identifying GC pauses as a latency factor.",
+      "excellent": "Explains the weak generational hypothesis (most objects die young), eden/survivor spaces, concurrent mark-sweep, and common causes of memory leaks like unclosed event listeners or unbounded caches."
+    },
+    "source": "Garbage-Collection-Handbook-Jones"
+  },
+  {
+    "id": "chunk_ice_03",
+    "role_id": "backend_engineer",
+    "competency": "ice_breaker",
+    "stage": "ice_breaker",
+    "difficulty_level": 1,
+    "title": "Engineering Retrospectives and Learning from Failure",
+    "content": "Assesses how candidate approaches architectural mistakes, production bugs, or failed technical choices. A strong engineer demonstrates humility, blameless reflection, root-cause awareness, and institutional learning without deflecting responsibility onto others.",
+    "expected_concepts": [
+      "project retrospective",
+      "root cause identification",
+      "blameless culture",
+      "lessons learned"
+    ],
+    "sample_questions": [
+      "Can you tell us about a time an engineering decision or implementation did not go as planned, and what you learned from that experience?"
+    ],
+    "rubric": {
+      "poor": "Deflects blame onto colleagues or external tooling, or claims they have never made a technical mistake.",
+      "acceptable": "Describes a legitimate technical bug or design flaw and explains how they corrected it.",
+      "excellent": "Demonstrates mature engineering ownership, details systematic root cause analysis, and explains preventive measures instituted."
+    },
+    "source": "Curated-Icebreaker-Bank"
+  },
+  {
+    "id": "chunk_ice_04",
+    "role_id": "backend_engineer",
+    "competency": "ice_breaker",
+    "stage": "ice_breaker",
+    "difficulty_level": 1,
+    "title": "Cross-Functional Collaboration and API Contracts",
+    "content": "Assesses how backend engineers coordinate interface specifications with frontend, mobile, and product stakeholders. Explores contract-first API development (OpenAPI/Swagger), mock servers for parallel development, and clear versioning discussions.",
+    "expected_concepts": [
+      "contract-first design",
+      "OpenAPI/Swagger",
+      "cross-functional alignment",
+      "mock APIs"
+    ],
+    "sample_questions": [
+      "How do you typically collaborate with frontend engineers and product teams when designing new API contracts before writing code?"
+    ],
+    "rubric": {
+      "poor": "Writes backend code in isolation and throws endpoints over the wall without documentation or consultation.",
+      "acceptable": "Discusses sharing schemas or OpenAPI specs and agreeing on endpoints before implementation.",
+      "excellent": "Advocates contract-first design, interactive mocking for parallel team velocity, and clear error payload standardization."
+    },
+    "source": "Curated-Icebreaker-Bank"
+  },
+  {
+    "id": "chunk_fund_hash_01",
+    "role_id": "backend_engineer",
+    "competency": "cs_fundamentals",
+    "stage": "fundamentals",
+    "difficulty_level": 2,
+    "title": "Hash Tables, Collision Resolution, and Load Factor",
+    "content": "Hash tables provide average O(1) time complexity for lookup, insertion, and deletion by mapping keys to array buckets via a hash function. Key concepts include collision resolution strategies: Separate Chaining (linked lists or red-black trees in Java 8+ HashMap) and Open Addressing (Linear Probing, Quadratic Probing, Double Hashing). Load Factor (ratio of elements to bucket array size) triggers dynamic array resizing and rehashing when exceeded.",
+    "expected_concepts": [
+      "hash function",
+      "separate chaining",
+      "open addressing",
+      "load factor",
+      "rehashing",
+      "worst-case O(N)"
+    ],
+    "sample_questions": [
+      "Explain how a hash map resolves collisions, and what happens internally when the load factor exceeds its threshold."
+    ],
+    "rubric": {
+      "poor": "Cannot explain what a hash collision is or believes hash map lookups are always strictly O(1) in the worst case.",
+      "acceptable": "Contrasts separate chaining with open addressing and explains dynamic resizing and rehashing when load factor is exceeded.",
+      "excellent": "Details treeification of bins (e.g. Java 8 HashMap converting linked lists to red-black trees at threshold 8) and amortized complexity analysis."
+    },
+    "source": "Introduction-to-Algorithms-CLRS"
+  },
+  {
+    "id": "chunk_deep_vmem_01",
+    "role_id": "backend_engineer",
+    "competency": "cs_fundamentals",
+    "stage": "deep_dive",
+    "difficulty_level": 4,
+    "title": "Virtual Memory, Page Faults, and CPU Cache Hierarchy",
+    "content": "Virtual memory abstracts physical RAM into contiguous virtual address spaces via page tables and Memory Management Units (MMU). Address translation is accelerated by the Translation Lookaside Buffer (TLB). When a referenced page is not in physical RAM, a Page Fault exception occurs, requiring disk I/O. At the hardware level, CPU cache lines (L1, L2, L3) and memory access patterns dictate throughput: cache-friendly sequential memory access significantly outperforms pointer-chasing random memory access due to spatial locality.",
+    "expected_concepts": [
+      "virtual address space",
+      "page tables and MMU",
+      "TLB (Translation Lookaside Buffer)",
+      "page fault",
+      "L1/L2/L3 cache lines",
+      "spatial and temporal locality"
+    ],
+    "sample_questions": [
+      "How does the operating system handle a page fault during virtual memory translation, and why does memory layout/locality drastically impact backend latency?"
+    ],
+    "rubric": {
+      "poor": "Confuses virtual memory with disk swapping or cannot explain what a page fault is.",
+      "acceptable": "Explains virtual to physical translation via page tables, noting that a page fault triggers disk read to bring the page into RAM.",
+      "excellent": "Details TLB misses, kernel trap handlers, dirty page writeback, CPU cache line pre-fetching, and false sharing in multi-core systems."
+    },
+    "source": "Computer-Systems-A-Programmers-Perspective-Bryant"
+  },
+  {
+    "id": "chunk_tech_idempotency_01",
+    "role_id": "backend_engineer",
+    "competency": "backend",
+    "stage": "role_technical",
+    "difficulty_level": 3,
+    "title": "API Idempotency Keys and Distributed Mutation Safety",
+    "content": "Network retries from client apps or payment gateways can cause duplicate mutations (such as double charges). Idempotency keys solve this: clients send a unique UUID header (Idempotency-Key). The server uses atomic distributed locks (e.g. Redis SETNX with TTL) to verify whether the key has been processed, is currently in-flight, or completed. Completed responses are cached and replayed verbatim for subsequent requests with the same key.",
+    "expected_concepts": [
+      "Idempotency-Key header",
+      "distributed lock (SETNX)",
+      "in-flight request handling",
+      "cached response replay",
+      "database unique constraints"
+    ],
+    "sample_questions": [
+      "How would you implement an idempotency key mechanism for a high-traffic payment processing API to guarantee that network retries never double-charge a user?"
+    ],
+    "rubric": {
+      "poor": "Suggests checking if a transaction exists by querying the database without any locking or unique constraints.",
+      "acceptable": "Explains using an Idempotency-Key header, storing processed request keys in Redis/database, and returning the stored result.",
+      "excellent": "Comprehensive architecture covering in-flight locking, handling concurrent identical requests, request payload hashing to detect key misuse, and TTL expiration."
+    },
+    "source": "Stripe-Engineering-Idempotency-Architecture"
+  },
+  {
+    "id": "chunk_deep_tracing_01",
+    "role_id": "backend_engineer",
+    "competency": "backend",
+    "stage": "deep_dive",
+    "difficulty_level": 4,
+    "title": "Distributed Tracing, Context Propagation, and Observability",
+    "content": "In microservices architectures, debugging latency across 10+ services requires distributed tracing. OpenTelemetry standards define Traces, Spans, and Context Propagation. The W3C TraceContext standard defines 'traceparent' headers (version, trace_id, parent_id, trace_flags). As requests traverse HTTP or message brokers, context headers must be injected and extracted. Sampling strategies (head-based vs tail-based) control storage and network overhead.",
+    "expected_concepts": [
+      "Trace and Span IDs",
+      "W3C TraceContext (traceparent header)",
+      "context propagation",
+      "head vs tail sampling",
+      "OpenTelemetry collector"
+    ],
+    "sample_questions": [
+      "How does distributed tracing track a single request across multiple microservices and asynchronous message queues, and how do you implement context propagation?"
+    ],
+    "rubric": {
+      "poor": "Suggests logging locally on each server and manually grepping timestamps across machines.",
+      "acceptable": "Explains generating a trace ID at the gateway and passing it through HTTP headers (traceparent) to correlate logs.",
+      "excellent": "Discusses OpenTelemetry SDKs, baggage items, span relationships, async message metadata injection, and tail-based sampling to capture error traces."
+    },
+    "source": "Distributed-Systems-Observability-Major"
+  },
+  {
+    "id": "chunk_fund_norm_01",
+    "role_id": "backend_engineer",
+    "competency": "database",
+    "stage": "fundamentals",
+    "difficulty_level": 2,
+    "title": "Database Normalization (1NF, 2NF, 3NF) and Strategic Denormalization",
+    "content": "Database normalization structures relational tables to eliminate redundancy and update anomalies: 1NF (atomic values, unique rows), 2NF (1NF + no partial key dependencies), 3NF (2NF + no transitive dependencies). However, high-scale read-heavy systems intentionally denormalize data (pre-computing join counts, duplicating customer names into order tables) to avoid costly multi-table joins, trading disk space and write complexity for sub-millisecond read latency.",
+    "expected_concepts": [
+      "1NF atomic columns",
+      "2NF partial dependency",
+      "3NF transitive dependency",
+      "update/deletion anomalies",
+      "read optimization trade-offs",
+      "strategic denormalization"
+    ],
+    "sample_questions": [
+      "Explain 1NF, 2NF, and 3NF database normalization, and describe a real-world scenario where you would intentionally denormalize a schema."
+    ],
+    "rubric": {
+      "poor": "Cannot define the differences between 1NF, 2NF, and 3NF or states that denormalization is always bad practice.",
+      "acceptable": "Explains atomic attributes, eliminating partial and transitive dependencies, and gives an example of caching counts or joins.",
+      "excellent": "Precise relational algebra definitions, discussion of insertion/update anomalies, and clear operational trade-offs of maintaining denormalized views."
+    },
+    "source": "Fundamentals-of-Database-Systems-Elmasri"
+  },
+  {
+    "id": "chunk_tech_deadlock_01",
+    "role_id": "backend_engineer",
+    "competency": "database",
+    "stage": "role_technical",
+    "difficulty_level": 3,
+    "title": "Database Deadlocks, Lock Modes, and Concurrency Detection",
+    "content": "Deadlocks occur when two or more transactions hold locks that the other transactions need, creating a circular wait condition. Relational engines (PostgreSQL, MySQL InnoDB) use Shared (S) locks for reads, Exclusive (X) locks for writes, and Intent locks (IS, IX) on tables. The database detects deadlocks by maintaining a Wait-For Graph and running cycle detection. When a cycle is detected, the engine aborts the transaction with the least work (victim) and rolls it back.",
+    "expected_concepts": [
+      "circular wait condition",
+      "Shared (S) vs Exclusive (X) locks",
+      "Wait-For Graph cycle detection",
+      "deadlock victim rollback",
+      "deterministic lock ordering"
+    ],
+    "sample_questions": [
+      "How do database deadlocks occur between concurrent transactions, how does the database engine detect them, and how should application code prevent them?"
+    ],
+    "rubric": {
+      "poor": "Believes deadlocks are solved by increasing transaction timeout to infinity or doesn't understand lock conflicts.",
+      "acceptable": "Explains circular lock dependencies, cycle detection in wait-for graphs, and ordering updates deterministically.",
+      "excellent": "Analyzes lock escalation, gap locks/next-key locks in InnoDB, deterministic resource sorting before acquisition, and application retry loops with backoff."
+    },
+    "source": "Transactional-Information-Systems-Weikum"
+  },
+  {
+    "id": "chunk_deep_consensus_01",
+    "role_id": "backend_engineer",
+    "competency": "database",
+    "stage": "deep_dive",
+    "difficulty_level": 5,
+    "title": "Distributed Consensus, Raft Protocol, and Log Replication",
+    "content": "Building fault-tolerant distributed databases requires consensus among replicas. The Raft consensus algorithm decomposes consensus into: (1) Leader Election (heartbeats, election timeouts, randomized backoff), (2) Log Replication (AppendEntries RPCs, leader commits entry once replicated to quorum), and (3) Safety (a candidate must possess all committed entries to win election). Quorum mechanics ensure that any two quorums overlap by at least one node, preventing split-brain.",
+    "expected_concepts": [
+      "Raft consensus algorithm",
+      "Leader Election",
+      "Log Replication",
+      "Quorum overlap (N/2 + 1)",
+      "Split-brain prevention",
+      "AppendEntries RPC"
+    ],
+    "sample_questions": [
+      "How does the Raft consensus algorithm maintain data consistency and prevent split-brain during leader election and log replication?"
+    ],
+    "rubric": {
+      "poor": "Confuses consensus with simple two-phase locking or cannot explain what a quorum is.",
+      "acceptable": "Explains terms, leader election with randomized timeouts, and that a majority quorum must acknowledge writes before commit.",
+      "excellent": "In-depth breakdown of log matching invariants, term comparison, uncommitted entry overwrites, and safety guarantees during cluster partitions."
+    },
+    "source": "In-Search-of-an-Understandable-Consensus-Algorithm-Ongaro"
+  },
+  {
+    "id": "chunk_fund_cdn_01",
+    "role_id": "backend_engineer",
+    "competency": "system_design",
+    "stage": "fundamentals",
+    "difficulty_level": 2,
+    "title": "Content Delivery Networks (CDNs) and Edge Caching",
+    "content": "A Content Delivery Network (Cloudflare, AWS CloudFront, Fastly) caches content geographically close to end users at edge Points of Presence (PoPs), minimizing latency and offloading origin servers. Static assets (images, CSS, JS) use immutable cache headers (Cache-Control: public, max-age=31536000, immutable) with content hashing. Dynamic API responses can be cached using stale-while-revalidate and purged via API keys upon data modification.",
+    "expected_concepts": [
+      "Edge PoP locations",
+      "Origin shield",
+      "Cache-Control headers",
+      "stale-while-revalidate",
+      "cache invalidation / purge",
+      "TLS termination at edge"
+    ],
+    "sample_questions": [
+      "How does a CDN improve both latency and backend resilience, and what HTTP headers control how edge servers cache assets?"
+    ],
+    "rubric": {
+      "poor": "Believes CDNs are only for video streaming or cannot name any caching HTTP headers.",
+      "acceptable": "Explains edge caching close to users and mentions Cache-Control max-age and asset hashing.",
+      "excellent": "Details Anycast routing, Origin Shielding, surrogate keys/cache tags for targeted invalidation, and edge computing (Cloudflare Workers/Lambda@Edge)."
+    },
+    "source": "Web-Performance-Day-High-Performance-Browser-Networking"
+  },
+  {
+    "id": "chunk_tech_realtime_01",
+    "role_id": "backend_engineer",
+    "competency": "system_design",
+    "stage": "role_technical",
+    "difficulty_level": 3,
+    "title": "Real-Time Communication: WebSockets vs SSE vs Long Polling",
+    "content": "Choosing the right transport protocol for real-time web applications depends on data flow directionality and server overhead. Long Polling holds HTTP connections open until data is ready (high HTTP handshake overhead). Server-Sent Events (SSE) provide persistent unidirectional streaming from server to client over standard HTTP/2, with native reconnection support and simple firewall traversal. WebSockets provide full-duplex, bidirectional TCP streaming with minimal framing overhead after an initial HTTP 101 Upgrade handshake.",
+    "expected_concepts": [
+      "WebSockets bidirectional full-duplex",
+      "Server-Sent Events (SSE) unidirectional",
+      "Long Polling overhead",
+      "HTTP 101 Upgrade",
+      "connection state and scale"
+    ],
+    "sample_questions": [
+      "Compare WebSockets and Server-Sent Events (SSE). In what scenarios would you choose SSE over WebSockets for server-to-client notifications?"
+    ],
+    "rubric": {
+      "poor": "Cannot explain the difference between polling and persistent connections.",
+      "acceptable": "Notes that WebSockets are bidirectional while SSE is server-to-client only, mentioning simpler HTTP compatibility for SSE.",
+      "excellent": "Deep comparison covering HTTP/2 multiplexing benefits with SSE, WebSocket stateful gateway horizontal scaling via Redis Pub/Sub, and battery/reconnection trade-offs."
+    },
+    "source": "High-Performance-Browser-Networking-Grigorik"
+  },
+  {
+    "id": "chunk_deep_uid_01",
+    "role_id": "backend_engineer",
+    "competency": "system_design",
+    "stage": "deep_dive",
+    "difficulty_level": 5,
+    "title": "Distributed Unique ID Generation at High Scale",
+    "content": "Generating unique, sortable 64-bit IDs in distributed systems without a single point of failure or database auto-increment bottleneck requires specialized algorithms. Twitter Snowflake generates 64-bit IDs: 1 sign bit, 41 timestamp bits (millisecond precision), 10 worker/machine ID bits, and 12 sequence bits. Time-sorted IDs preserve B-Tree index locality, avoiding index fragmentation caused by random UUIDv4.",
+    "expected_concepts": [
+      "Twitter Snowflake algorithm",
+      "timestamp bits + worker ID + sequence",
+      "B-Tree index fragmentation",
+      "UUIDv4 randomness penalty",
+      "clock drift handling (NTP)"
+    ],
+    "sample_questions": [
+      "Why does using random UUIDv4 as a primary key cause database performance degradation in high-volume B-Tree tables, and how does Twitter Snowflake resolve this?"
+    ],
+    "rubric": {
+      "poor": "Claims UUIDv4 has zero performance trade-offs or cannot explain how B-Tree indexes store keys.",
+      "acceptable": "Explains that random UUIDs cause page splits and random disk I/O in B-Trees, whereas Snowflake IDs are time-ordered.",
+      "excellent": "Details the 64-bit Snowflake bit layout, clock synchronization issues (handling backwards clock drift), and contrasts with UUIDv7."
+    },
+    "source": "System-Design-Interview-Alex-Xu"
+  },
+  {
+    "id": "chunk_scen_strangler_01",
+    "role_id": "backend_engineer",
+    "competency": "scenario_managerial",
+    "stage": "scenario_managerial",
+    "difficulty_level": 5,
+    "title": "Monolith to Microservices Migration: The Strangler Fig Pattern",
+    "content": "Migrating a mission-critical monolithic backend to microservices without risking business disruption requires incremental decomposition. The Strangler Fig pattern places an API Gateway/reverse proxy in front of the monolith. New capabilities or individual domain boundaries (e.g. Authentication, Billing) are built as separate services, with the proxy gradually routing traffic to the new service while old paths continue hitting the monolith until the legacy component is completely replaced.",
+    "expected_concepts": [
+      "Strangler Fig pattern",
+      "API Gateway proxy routing",
+      "Domain-Driven Design (Bounded Contexts)",
+      "dual-write data synchronization",
+      "rollback safety"
+    ],
+    "sample_questions": [
+      "Your company has a massive legacy monolith that is slowing down deployments. How would you plan and lead an incremental migration to microservices using the Strangler Fig pattern without downtime?"
+    ],
+    "rubric": {
+      "poor": "Recommends a high-risk 'Big Bang' total rewrite of the entire system over 12 months.",
+      "acceptable": "Proposes using a proxy to intercept traffic and migrating one decoupled service at a time.",
+      "excellent": "Masterful execution: identifies bounded contexts, details dual-writing and reconciliation jobs, plans canary routing via API Gateway, and defines clear fallback rollback criteria."
+    },
+    "source": "Monolith-to-Microservices-Sam-Newman"
+  }
+]
