@@ -5,7 +5,9 @@ across target engineering roles (Backend Developer, Full Stack Developer, Softwa
 """
 
 from typing import Dict, List, Optional, Any
-from adaptive.target_concept import COMPETENCY_CORE_CONCEPTS
+from core.concepts import COMPETENCY_CORE_CONCEPTS
+
+
 
 
 

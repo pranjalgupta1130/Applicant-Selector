@@ -8,6 +8,8 @@ question type diversity, and multi-tier mastery confidence.
 from typing import Dict, List, Any
 from core.schemas import ConceptEvidence, ConceptEvidenceProvenance
 from adaptive.state import InterviewState, ConceptMasteryLevel
+from adaptive.confidence import EvidenceConfidenceTracker
+
 
 
 class ConceptEvidenceAggregator:
@@ -164,34 +166,15 @@ class ConceptEvidenceAggregator:
         is_recovered: bool = False
     ) -> float:
         """
-        Lightweight deterministic formula bounding confidence between 0.0 and 0.95.
-        Rewards multi-turn and cross-stage/type consistency; penalizes contradictory evidence.
+        Delegates directly to canonical EvidenceConfidenceTracker formula.
+        Ensures a single source of truth for confidence calculations.
         """
-        if is_recovered:
-            base = 0.80
-        elif demonstrated_count >= 3:
-            base = 0.85
-        elif demonstrated_count >= 2:
-            base = 0.75
-        elif demonstrated_count == 1:
-            base = 0.50
-        elif partial_count > 0 and demonstrated_count == 0 and missed_count == 0:
-            base = 0.35
-        elif missed_count == 1:
-            base = 0.20
-        else:
-            base = 0.05
+        return EvidenceConfidenceTracker.calculate_concept_confidence(
+            demonstrated_count=demonstrated_count,
+            partial_count=partial_count,
+            missed_count=missed_count,
+            qtypes_count=qtypes_count,
+            stages_count=stages_count,
+            is_recovered=is_recovered
+        )
 
-        # Multi-question-type consistency bonus
-        if qtypes_count >= 2 and demonstrated_count > 0:
-            base += 0.08
-
-        # Cross-stage consistency bonus
-        if stages_count >= 2 and demonstrated_count > 0:
-            base += 0.08
-
-        # Contradictory evidence penalty (demonstrated in one turn, missed in another)
-        if demonstrated_count > 0 and missed_count > 0 and not is_recovered:
-            base = max(0.20, base - 0.20)
-
-        return round(max(0.0, min(0.95, base)), 2)

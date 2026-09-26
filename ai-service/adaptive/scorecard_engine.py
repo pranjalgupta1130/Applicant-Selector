@@ -113,8 +113,10 @@ class ScorecardEngine:
             competencies=competencies,
             strengths=strengths,
             gaps=gaps,
-            role_alignment=role_alignment
+            role_alignment=role_alignment,
+            evidence_coverage=session_evidence_coverage
         )
+
 
         return FinalScorecard(
             candidate=candidate,
@@ -470,7 +472,8 @@ class ScorecardEngine:
         competencies: List[CompetencyEvidence],
         strengths: List[StrengthItem],
         gaps: List[GapItem],
-        role_alignment: RoleAlignmentAnalysis
+        role_alignment: RoleAlignmentAnalysis,
+        evidence_coverage: float = 0.0
     ) -> str:
         """
         Synthesizes an explainable, non-generic report narrative derived strictly from actual evidence.
@@ -482,9 +485,10 @@ class ScorecardEngine:
         paragraphs.append(
             f"**Candidate Evaluation Summary for {cand_name} ({role_title})**\n"
             f"The candidate achieved an overall weighted competency score of {overall_score}/100 "
-            f"with an evidence confidence of {overall_confidence:.2f} (evidence coverage: {role_alignment.alignmentScore}%). "
+            f"with an evidence confidence of {overall_confidence:.2f} (evidence coverage: {evidence_coverage:.0%}, role alignment: {role_alignment.alignmentScore}%). "
             f"This evaluation is strictly derived from multi-turn interview responses and concept demonstration provenance."
         )
+
 
         comp_lines = []
         for c in competencies:

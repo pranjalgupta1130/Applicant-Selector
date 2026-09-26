@@ -1,8 +1,11 @@
 """
-Adaptive Interview Strategy Engine for BoardRoom AI.
-Provides stage progression, dynamic difficulty calibration, concept gap tracking,
-and next-question recommendation according to Hackathon Master Plan Section 3.2, 7.3, 9.1, and Phase 6.
+[DEPRECATED] Legacy Stateless Adaptive Interview Strategy Engine for BoardRoom AI.
+Kept strictly for backwards compatibility with legacy tests.
+CANONICAL STATEFUL ENGINE:
+Use adaptive/policy.py (AdaptiveInterviewPolicy), adaptive/orchestrator.py (InterviewOrchestrator),
+and the /api/interview/* endpoints.
 """
+
 
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field

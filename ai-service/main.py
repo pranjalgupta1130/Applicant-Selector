@@ -20,9 +20,10 @@ app = FastAPI(
 )
 
 # CORS setup for seamless Node backend & React frontend integration
+# Explicit origins configured via settings.allowed_origins_list so allow_credentials=True is compliant with browser specs
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.allowed_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -33,14 +34,17 @@ app.include_router(api_router)
 
 @app.get("/health", tags=["Health"])
 async def health_check():
-    """Returns service health, loaded chunks count, and LLM configuration."""
+    """Returns service health, loaded chunks count, retrieval mode, and LLM configuration."""
     return {
         "status": "healthy",
         "service": "BoardRoom AI - RAG & Question Generation Subsystem",
         "chunks_indexed": len(_retriever.chunks),
+        "retrieval_mode": _retriever.retrieval_mode,
+        "dense_embeddings_active": _retriever.dense_embeddings_active,
         "llm_configured": bool(settings.GEMINI_API_KEY),
         "llm_model": settings.DEFAULT_LLM_MODEL
     }
+
 
 
 if __name__ == "__main__":

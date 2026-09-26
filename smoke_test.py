@@ -84,8 +84,8 @@ def run_smoke_test():
         print(f"  [FAIL] Question generation failed: {e}")
         sys.exit(1)
 
-    # 3. Adaptive Handoff Context Test
-    print("\n[3/3] Testing POST /api/ai/adaptive-context ...")
+    # 3. [DEPRECATED] Adaptive Handoff Context Test
+    print("\n[3/4] Testing POST /api/ai/adaptive-context [DEPRECATED legacy endpoint] ...")
     adapt_payload = {
         "previousQuestions": [question["text"]],
         "coveredConcepts": ["JWT", "HTTP"],
@@ -107,11 +107,49 @@ def run_smoke_test():
             rec = json.loads(response.read().decode("utf-8"))
             print(f"  -> HTTP {response.status} OK")
             print(f"  -> Recommended Strategy: {rec['strategy']}")
-            print(f"  -> Next Stage: {rec['next_stage']} | Next Diff: {rec['next_difficulty']}")
-            print(f"  -> Concepts to Probe: {rec.get('missing_concepts_to_probe', [])}")
             assert "strategy" in rec
     except Exception as e:
         print(f"  [FAIL] Adaptive context failed: {e}")
+        sys.exit(1)
+
+    # 4. Canonical Closed-Loop Interview Flow Test
+    print("\n[4/4] Testing Canonical Engine (POST /api/interview/start & /api/interview/turn) ...")
+    try:
+        start_payload = {
+            "candidate": {"name": "Jordan Lee", "skills": ["Python", "FastAPI"], "experience_years": 3.0},
+            "role": {"id": "backend_engineer", "title": "Backend Software Engineer"}
+        }
+        req_start = urllib.request.Request(
+            f"{BASE_URL}/api/interview/start",
+            data=json.dumps(start_payload).encode("utf-8"),
+            headers={"Content-Type": "application/json", "Accept": "application/json"}
+        )
+        with urllib.request.urlopen(req_start, timeout=10) as response:
+            start_data = json.loads(response.read().decode("utf-8"))
+            assert response.status == 200
+            assert "openingQuestion" in start_data
+            assert "interviewState" in start_data
+            print("  -> POST /api/interview/start: OK")
+
+        turn_payload = {
+            "currentQuestion": start_data["openingQuestion"],
+            "candidateAnswer": "I have experience with Python, FastAPI, and PostgreSQL building microservices.",
+            "interviewState": start_data["interviewState"]
+        }
+        req_turn = urllib.request.Request(
+            f"{BASE_URL}/api/interview/turn",
+            data=json.dumps(turn_payload).encode("utf-8"),
+            headers={"Content-Type": "application/json", "Accept": "application/json"}
+        )
+        with urllib.request.urlopen(req_turn, timeout=10) as response:
+            turn_data = json.loads(response.read().decode("utf-8"))
+            assert response.status == 200
+            assert "updatedState" in turn_data
+            assert "decision" in turn_data
+            assert "termination" in turn_data
+            print(f"  -> POST /api/interview/turn: OK (Decision: {turn_data['decision']['strategy']})")
+    except Exception as e:
+        print(f"  [FAIL] Canonical interview flow failed: {e}")
         sys.exit(1)
 
     print("\n" + "=" * 60)
@@ -120,3 +158,4 @@ def run_smoke_test():
 
 if __name__ == "__main__":
     run_smoke_test()
+

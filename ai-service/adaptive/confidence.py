@@ -15,6 +15,52 @@ class EvidenceConfidenceTracker:
     """
 
     @classmethod
+    def calculate_concept_confidence(
+        cls,
+        demonstrated_count: int,
+        partial_count: int,
+        missed_count: int,
+        qtypes_count: int = 1,
+        stages_count: int = 1,
+        is_recovered: bool = False
+    ) -> float:
+        """
+        Canonical deterministic formula bounding confidence between 0.0 and 0.95.
+        Rewards multi-turn and cross-stage/type consistency; penalizes contradictory evidence.
+        Preserves the strongest behaviors across all subsystems.
+        """
+        if is_recovered:
+            base = 0.80
+        elif demonstrated_count >= 3:
+            base = 0.85
+        elif demonstrated_count >= 2:
+            base = 0.75
+        elif demonstrated_count == 1:
+            base = 0.50
+        elif partial_count > 0 and demonstrated_count == 0 and missed_count == 0:
+            base = 0.35
+        elif missed_count == 1:
+            base = 0.20
+        else:
+            # Repeatedly missing or untested
+            base = 0.05
+
+        # Multi-question-type consistency bonus (+0.08)
+        if qtypes_count >= 2 and demonstrated_count > 0:
+            base += 0.08
+
+        # Cross-stage consistency bonus (+0.08)
+        if stages_count >= 2 and demonstrated_count > 0:
+            base += 0.08
+
+        # Contradictory evidence penalty (demonstrated in one turn, missed in another)
+        if demonstrated_count > 0 and missed_count > 0 and not is_recovered:
+            base = max(0.20, base - 0.20)
+
+        # Clamp deterministically between 0.0 and 0.95 (never claim 100% certainty)
+        return round(max(0.0, min(0.95, base)), 2)
+
+    @classmethod
     def compute_concept_confidence(cls, state: InterviewState) -> Dict[str, float]:
         """
         Calculates confidence score (0.0 to 0.95) for each evaluated concept.
@@ -39,40 +85,21 @@ class EvidenceConfidenceTracker:
             demo_count = state.concept_demonstration_counts.get(concept, 0)
             missing_count = state.concept_missing_counts.get(concept, 0)
             partial_count = state.concept_partial_counts.get(concept, 0)
+            is_recovered = concept in state.recovered_concepts
+            qtypes_cnt = len(concept_types.get(concept, set()))
+            stages_cnt = len(concept_stages.get(concept, set()))
 
-            # 1. Base confidence
-            if demo_count >= 3:
-                base = 0.85
-            elif demo_count >= 2:
-                base = 0.75
-            elif demo_count == 1:
-                base = 0.50
-            elif partial_count > 0 and demo_count == 0 and missing_count == 0:
-                base = 0.35
-            elif missing_count == 1:
-                base = 0.20
-            else:
-                # Repeatedly missing
-                base = 0.05
-
-            # 2. Multi-question-type reinforcement (+0.08)
-            num_types = len(concept_types.get(concept, set()))
-            if num_types >= 2 and demo_count > 0:
-                base += 0.08
-
-            # 3. Multi-stage reinforcement (+0.08)
-            num_stages = len(concept_stages.get(concept, set()))
-            if num_stages >= 2 and demo_count > 0:
-                base += 0.08
-
-            # 4. Contradictory evidence penalty (demonstrated in one turn, missed in another)
-            if demo_count > 0 and missing_count > 0:
-                base = max(0.15, base - 0.20)
-
-            # Clamp deterministically between 0.0 and 0.95 (never claim 100% certainty)
-            confidences[concept] = round(max(0.0, min(0.95, base)), 2)
+            confidences[concept] = cls.calculate_concept_confidence(
+                demonstrated_count=demo_count,
+                partial_count=partial_count,
+                missed_count=missing_count,
+                qtypes_count=qtypes_cnt,
+                stages_count=stages_cnt,
+                is_recovered=is_recovered
+            )
 
         return confidences
+
 
     @classmethod
     def compute_evidence_coverage(cls, state: InterviewState) -> float:

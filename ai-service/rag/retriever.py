@@ -98,6 +98,16 @@ class KnowledgeRetriever:
                 logger.warning(f"Dense embedding initialization skipped or failed: {e}. Defaulting to lexical fallback.")
                 self.dense_available = False
 
+    @property
+    def dense_embeddings_active(self) -> bool:
+        """Returns True if local dense SentenceTransformer embeddings are active and loaded."""
+        return bool(self.dense_available and self.dense_embeddings is not None)
+
+    @property
+    def retrieval_mode(self) -> str:
+        """Returns 'dense' if SentenceTransformer embeddings are active, otherwise 'tfidf'."""
+        return "dense" if self.dense_embeddings_active else "tfidf"
+
     def retrieve(
         self,
         query: str,

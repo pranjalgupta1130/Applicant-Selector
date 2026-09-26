@@ -234,6 +234,8 @@ class InterviewState(BaseModel):
                 self.missing_concepts.append(m)
             if m not in self.weak_concepts:
                 self.weak_concepts.append(m)
+            if m in self.strong_concepts:
+                self.strong_concepts.remove(m)
             if m in self.demonstrated_concepts:
                 self.demonstrated_concepts.remove(m)
             if m in self.consistently_demonstrated_concepts:
@@ -253,6 +255,90 @@ class InterviewState(BaseModel):
             "covered_concepts": list(covered),
             "missing_concepts": list(missing)
         })
+
+        # Enforce invariant consistency across all concept structures
+        self.validate_and_synchronize_invariants()
+
+    def validate_and_synchronize_invariants(self) -> None:
+        """
+        Enforces and validates core state invariants across overlapping concept structures:
+        1. No concept can be simultaneously in demonstrated_concepts and missing_concepts.
+        2. demonstrated_once_concepts and consistently_demonstrated_concepts are strictly disjoint.
+        3. All demonstrated sub-tiers are subsets of demonstrated_concepts.
+        4. Mastery levels accurately match demonstration / missing counts and recovery status.
+        5. Recovered concepts are purged from persistent weaknesses.
+        6. strong_concepts and weak_concepts do not overlap.
+        7. concept_map accurately reflects canonical status.
+        """
+        # Deduplicate all lists while preserving order
+        self.demonstrated_concepts = list(dict.fromkeys(self.demonstrated_concepts))
+        self.partially_demonstrated_concepts = list(dict.fromkeys(self.partially_demonstrated_concepts))
+        self.missing_concepts = list(dict.fromkeys(self.missing_concepts))
+        self.strong_concepts = list(dict.fromkeys(self.strong_concepts))
+        self.weak_concepts = list(dict.fromkeys(self.weak_concepts))
+        self.consistently_demonstrated_concepts = list(dict.fromkeys(self.consistently_demonstrated_concepts))
+        self.demonstrated_once_concepts = list(dict.fromkeys(self.demonstrated_once_concepts))
+        self.repeatedly_missing_concepts = list(dict.fromkeys(self.repeatedly_missing_concepts))
+        self.recovered_concepts = list(dict.fromkeys(self.recovered_concepts))
+        self.persistent_weaknesses = list(dict.fromkeys(self.persistent_weaknesses))
+
+        # Invariant 1: Demonstrated vs Missing mutual exclusivity
+        for d in self.demonstrated_concepts:
+            if d in self.missing_concepts:
+                self.missing_concepts.remove(d)
+            if d in self.partially_demonstrated_concepts:
+                self.partially_demonstrated_concepts.remove(d)
+            if d in self.weak_concepts:
+                self.weak_concepts.remove(d)
+
+        # Invariant 2: Recovered concepts purged from active weaknesses
+        for r in self.recovered_concepts:
+            if r in self.persistent_weaknesses:
+                self.persistent_weaknesses.remove(r)
+            if r in self.repeatedly_missing_concepts:
+                self.repeatedly_missing_concepts.remove(r)
+            if r in self.missing_concepts:
+                self.missing_concepts.remove(r)
+
+        # Invariant 3: demonstrated_once vs consistently_demonstrated disjointness
+        demo_once = []
+        demo_cons = []
+        for d in self.demonstrated_concepts:
+            cnt = self.concept_demonstration_counts.get(d, 0)
+            if cnt >= 2:
+                demo_cons.append(d)
+                self.mastery_levels[d] = ConceptMasteryLevel.CONSISTENTLY_DEMONSTRATED.value
+            else:
+                demo_once.append(d)
+                if self.mastery_levels.get(d) != ConceptMasteryLevel.RECOVERED.value:
+                    self.mastery_levels[d] = ConceptMasteryLevel.DEMONSTRATED_ONCE.value
+
+        self.demonstrated_once_concepts = demo_once
+        self.consistently_demonstrated_concepts = demo_cons
+
+        # Invariant 4: Strong vs Weak non-overlapping
+        for s in self.strong_concepts:
+            if s in self.weak_concepts:
+                self.weak_concepts.remove(s)
+
+        # Invariant 5: Update concept_map canonical status
+        for d in self.demonstrated_concepts:
+            self.concept_map[d] = "demonstrated"
+        for p in self.partially_demonstrated_concepts:
+            if p not in self.demonstrated_concepts:
+                self.concept_map[p] = "partially_demonstrated"
+        for m in self.missing_concepts:
+            if m not in self.demonstrated_concepts:
+                self.concept_map[m] = "missing"
+
+    def assert_invariants_valid(self) -> bool:
+        """Asserts that state invariants are strictly preserved without contradiction."""
+        assert set(self.demonstrated_concepts).isdisjoint(set(self.missing_concepts)), "demonstrated and missing concepts overlap"
+        assert set(self.demonstrated_once_concepts).isdisjoint(set(self.consistently_demonstrated_concepts)), "demonstrated_once and consistently_demonstrated overlap"
+        assert set(self.recovered_concepts).isdisjoint(set(self.persistent_weaknesses)), "recovered and persistent weaknesses overlap"
+        assert set(self.strong_concepts).isdisjoint(set(self.weak_concepts)), "strong and weak concepts overlap"
+        return True
+
 
     def is_persistent_weakness(self, concept: str) -> bool:
         """Returns True if concept has been missed/weak across multiple turns."""

@@ -230,7 +230,13 @@ class QuestionGeneratorPipeline:
         from google import genai
         from google.genai import types
 
-        client = genai.Client(api_key=settings.GEMINI_API_KEY)
+        timeout_ms = int(settings.LLM_TIMEOUT_SECONDS * 1000)
+        http_options = types.HttpOptions(timeout=timeout_ms)
+
+        client = genai.Client(
+            api_key=settings.GEMINI_API_KEY,
+            http_options=http_options
+        )
 
         # Build context block
         context_snippets = []
@@ -266,9 +272,11 @@ Respond with valid JSON according to the schema."""
             contents=[SYSTEM_PROMPT, user_prompt],
             config=types.GenerateContentConfig(
                 temperature=settings.LLM_TEMPERATURE,
-                response_mime_type="application/json"
+                response_mime_type="application/json",
+                http_options=http_options
             )
         )
+
 
         raw_text = response.text.strip()
         data = self._clean_and_parse_json(raw_text)

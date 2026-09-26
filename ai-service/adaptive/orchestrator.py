@@ -181,7 +181,7 @@ class InterviewOrchestrator:
             reason=trace_reason
         )
 
-        # 8. Termination Evaluation
+        # 8. Termination Evaluation (Authoritative decision engine)
         termination = InterviewTerminationEngine.evaluate_termination(
             state=state,
             policy_decision=policy_decision
@@ -190,11 +190,16 @@ class InterviewOrchestrator:
         # 9. Next Question Generation (if not terminating)
         next_question: Optional[QuestionObject] = None
         if not termination.shouldTerminate:
+            # If policy suggested conclude but termination engine decided to continue, guard target stage
+            target_stage = policy_decision.next_stage
+            if target_stage == "closing":
+                target_stage = state.current_stage if state.current_stage != "closing" else "scenario_managerial"
+
             try:
                 next_question = self.generator.generate(
                     candidate=candidate,
                     role=role,
-                    stage=policy_decision.next_stage,
+                    stage=target_stage,
                     competency=policy_decision.next_competency,
                     difficulty=policy_decision.next_difficulty,
                     previous_questions=state.previous_questions,
@@ -208,7 +213,7 @@ class InterviewOrchestrator:
                 next_question = self.generator._fallback_generation(
                     candidate=candidate,
                     role=role,
-                    stage=policy_decision.next_stage,
+                    stage=target_stage,
                     competency=policy_decision.next_competency,
                     difficulty=policy_decision.next_difficulty,
                     retrieved_chunks=[],
@@ -217,6 +222,10 @@ class InterviewOrchestrator:
                     question_type=policy_decision.recommended_question_type
                 )
                 next_question.adaptiveReason = trace_reason
+        else:
+            # Authoritative termination: harmonize strategy
+            policy_decision.strategy = "conclude_interview"
+            trace.strategy = "conclude_interview"
 
         decision_obj = DecisionObject(
             strategy=policy_decision.strategy,
@@ -226,6 +235,7 @@ class InterviewOrchestrator:
             questionType=policy_decision.recommended_question_type,
             reason=trace_reason
         )
+
 
         return TurnResponse(
             updatedState=state.model_dump(),

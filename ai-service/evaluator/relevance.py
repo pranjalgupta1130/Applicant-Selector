@@ -10,7 +10,8 @@ Implements the explainable 5-factor scoring formula defined in Hackathon Master 
 """
 
 import re
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict
+
 from core.schemas import (
     CandidateProfile,
     TargetRole,
@@ -18,38 +19,17 @@ from core.schemas import (
 )
 
 
-# Competency keywords map for deterministic lexical and semantic grounding
-COMPETENCY_KEYWORD_MAP = {
-    "cs_fundamentals": [
-        "oop", "inheritance", "composition", "polymorphism", "encapsulation",
-        "process", "thread", "concurrency", "stack", "heap", "memory",
-        "garbage collection", "tcp", "handshake", "socket", "git", "os"
-    ],
-    "backend": [
-        "rest", "api", "http", "verb", "idempotent", "stateless", "jwt",
-        "auth", "token", "refresh", "session", "middleware", "rate limit",
-        "cookie", "endpoint", "controller", "payload", "microservice"
-    ],
-    "database": [
-        "sql", "nosql", "index", "b-tree", "acid", "transaction", "isolation",
-        "read committed", "repeatable read", "phantom", "table scan",
-        "migration", "schema", "connection pool", "wal", "foreign key"
-    ],
-    "system_design": [
-        "cache", "redis", "cache-aside", "write-through", "ttl", "stampede",
-        "load balancer", "layer 4", "layer 7", "sharding", "consistent hashing",
-        "cap theorem", "pacelc", "message queue", "kafka", "cqrs", "event sourcing"
-    ],
-    "scenario_managerial": [
-        "incident", "production", "outage", "timeout", "504", "cpu",
-        "triage", "mitigate", "post-mortem", "technical debt", "stakeholder",
-        "prioritize", "code review", "mentor", "velocity", "refactor"
-    ],
-    "ice_breaker": [
-        "background", "project", "experience", "journey", "role", "introduction",
-        "interest", "learning", "tech stack", "tools", "challenge"
-    ]
-}
+from core.concepts import (
+    COMPETENCY_CORE_CONCEPTS,
+    build_unified_competency_keyword_map,
+    get_canonical_concepts_for_competency,
+    get_all_canonical_concepts
+)
+
+# Canonical unified competency keyword map derived directly from core.concepts
+COMPETENCY_KEYWORD_MAP = build_unified_competency_keyword_map()
+
+
 
 
 class QuestionRelevanceEvaluator:
@@ -191,14 +171,17 @@ class QuestionRelevanceEvaluator:
         comp_norm = competency.lower().replace("-", "_").replace(" ", "_")
         keywords = COMPETENCY_KEYWORD_MAP.get(comp_norm, [])
 
-        matched_kw = [k for k in keywords if k in q_lower]
+        matched_kw = [
+            k for k in keywords
+            if re.search(r'(?:\b|_)' + re.escape(k) + r'(?:\b|_)', q_lower)
+        ]
 
         # Also check expected concepts if provided
         concept_matches = 0
         if expected_concepts:
             for c in expected_concepts:
                 words = c.lower().split()
-                if any(w in q_lower for w in words if len(w) > 3):
+                if any(re.search(r'\b' + re.escape(w) + r'\b', q_lower) for w in words if len(w) > 3):
                     concept_matches += 1
 
         if matched_kw and concept_matches > 0:
@@ -208,7 +191,11 @@ class QuestionRelevanceEvaluator:
         elif concept_matches > 0:
             return 82, f"Covers target concepts in {competency}"
         else:
+            has_eng = any(marker in q_lower for marker in cls.GENERAL_ENGINEERING_MARKERS)
+            if not has_eng:
+                return 10, f"Completely off-topic question with no relevance to {competency}"
             return 40, f"Question does not clearly address core technical elements of {competency}"
+
 
     @classmethod
     def _score_difficulty_appropriateness(cls, stage: str, difficulty: int, q_text: str) -> Tuple[int, str]:

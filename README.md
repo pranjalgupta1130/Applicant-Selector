@@ -10,39 +10,45 @@ Production-quality Hackathon MVP for the **RAG + Question Generation Subsystem**
 
 ---
 
-## 🎯 Architecture Overview
+## 🎯 Canonical Architecture Overview
+
+The system strictly adheres to the single canonical closed-loop adaptive interview pipeline:
 
 ```
-Candidate Profile + Target Role + Stage + Competency + Difficulty + Missing Concepts
-                               │
-                               ▼
-            ┌──────────────────────────────────────────────┐
-            │             KnowledgeRetriever               │
-            │  - Metadata Pre-Filtering & Auto-Relaxation  │
-            │  - Dense Semantic Embeddings (MiniLM-L6-v2)  │
-            │  - In-Process Cosine Similarity Dot-Product   │
-            │  - Sublinear TF-IDF Lexical Fallback         │
-            └──────────────────────┬───────────────────────┘
-                                   │ Top-K Grounded Context + Rubrics
-                                   ▼
-            ┌──────────────────────────────────────────────┐
-            │          QuestionGeneratorPipeline           │
-            │  - Grounded Context Synthesis                │
-            │  - Gemini 2.5 Flash Structured JSON          │
-            │  - Deduplication & Adaptive Probing          │
-            │  - Curated Deterministic Question Fallback   │
-            └──────────────────────┬───────────────────────┘
-                                   │ Structured Question
-                                   ▼
-            ┌──────────────────────────────────────────────┐
-            │          QuestionRelevanceEvaluator          │
-            │  - 5-Factor Auditable Formula (0-100)        │
-            │  - Explainable Score Rationale Breakdown     │
-            │  - Quality Guardrail Validation              │
-            └──────────────────────┬───────────────────────┘
-                                   │
-                                   ▼
-         Validated QuestionObject with Grounding Sources & Rubrics
+Candidate Answer
+      │
+      ▼
+Answer Evaluation (Member 4 Contract / Ingestion)
+      │
+      ▼
+InterviewState Update (History, Mastery Tiers, Streaks, Rolling Trends)
+      │
+      ▼
+Adaptive Policy (Stage Progression, Quotas, Difficulty Calibration)
+      │
+      ▼
+Concept Prerequisite DAG (Dependency Verification)
+      │
+      ▼
+Deterministic Target Concept Selection (Weakness -> Prereqs -> Gaps -> Coverage)
+      │
+      ▼
+KnowledgeRetriever (Dense MiniLM-L6-v2 Semantic Search / TF-IDF Fallback)
+      │
+      ▼
+QuestionGeneratorPipeline (Gemini LLM with Enforced Timeout & Grounded Fallback)
+      │
+      ▼
+Quality Gates (Relevance >= 70, Rubric Consistency, Deduplication)
+      │
+      ▼
+Validated QuestionObject + Explainable Decision Trace
+      │
+      ▼
+InterviewTerminationEngine (Authoritative Multi-Criteria Session Decision)
+      │
+      ▼
+ScorecardEngine (Competency Matrix, Evidence Coverage, Decision Support Report)
 ```
 
 ---
@@ -53,27 +59,42 @@ Candidate Profile + Target Role + Stage + Competency + Difficulty + Missing Conc
 .
 ├── ai-service/
 │   ├── adaptive/
-│   │   └── strategy.py          # Adaptive interview progression & gap probing
+│   │   ├── competency_evaluator.py # Evidence confidence & coverage evaluator
+│   │   ├── competency_matrix.py    # Role-aware weights & expected concept profiles
+│   │   ├── concept_evidence.py     # Turn provenance & demonstration aggregator
+│   │   ├── confidence.py           # Canonical single confidence calculation
+│   │   ├── orchestrator.py         # Central closed-loop interview orchestrator
+│   │   ├── policy.py               # Deterministic Adaptive Interview Policy
+│   │   ├── prerequisites.py        # Concept prerequisite DAG engine
+│   │   ├── scorecard_engine.py     # Final selector scorecard & report generator
+│   │   ├── simulator.py            # Golden archetype regression simulator
+│   │   ├── state.py                # InterviewState model & invariant synchronization
+│   │   ├── strategy.py             # [DEPRECATED] Legacy stateless strategy
+│   │   └── target_concept.py       # Deterministic target concept selection
 │   ├── api/
-│   │   └── routes.py            # FastAPI REST endpoints (Section 9 contracts)
+│   │   └── routes.py               # Canonical REST endpoints (/api/interview/*)
 │   ├── core/
-│   │   ├── config.py            # Environment & model settings
-│   │   └── schemas.py           # Shared Pydantic data contracts (Section 11.2)
+│   │   ├── concepts.py             # Single canonical source of truth for concepts
+│   │   ├── config.py               # Environment, timeout, and CORS settings
+│   │   └── schemas.py              # Frozen Pydantic data contracts
 │   ├── evaluator/
-│   │   └── relevance.py         # 5-factor explainable question relevance engine
+│   │   ├── answer_evaluator.py     # Member 4 contract adapter
+│   │   └── relevance.py            # 5-factor explainable question relevance engine
 │   ├── generator/
-│   │   └── pipeline.py          # End-to-end question generator + fallback
+│   │   └── pipeline.py             # Grounded question generator with timeout & fallback
 │   ├── rag/
-│   │   └── retriever.py         # Metadata-filtered vector retrieval engine
-│   └── main.py                  # Service entry point with CORS & Health check
+│   │   └── retriever.py            # Dense embedding search & TF-IDF fallback
+│   └── main.py                     # FastAPI entry point with CORS & Health check
 ├── data/
 │   └── knowledge_base/
-│       └── seed_knowledge.json  # 26 curated chunks across 5 competencies & stages
+│       └── seed_knowledge.json     # 39 curated chunks across competencies & stages
 ├── tests/
-│   └── test_rag_pipeline.py     # Golden test suite (13 passing test cases)
-├── .env.example                 # Environment configuration template
-├── requirements.txt             # Pinned dependencies
-└── README.md                    # Subsystem documentation & API reference
+│   ├── test_p0_stabilization.py    # P0 stabilization & deterministic adaptive tests
+│   ├── test_closed_loop_interview.py # Closed-loop interview tests
+│   ├── test_competency_assessment.py # Competency assessment & scorecard tests
+│   └── ...                         # Comprehensive test suites (140 tests)
+├── requirements.txt                # Pinned dependencies
+└── README.md                       # Subsystem documentation & API reference
 ```
 
 ---
@@ -84,12 +105,15 @@ Candidate Profile + Target Role + Stage + Competency + Difficulty + Missing Conc
 ```bash
 cp .env.example .env
 ```
-*(Optional for online generation: add your `GEMINI_API_KEY` in `.env`. If omitted or offline, the subsystem operates deterministically via the curated knowledge bank.)*
+Key configuration settings:
+- `GEMINI_API_KEY`: (Optional) API key for Gemini LLM generation. When absent or timed out, the system automatically uses the curated deterministic question bank.
+- `LLM_TIMEOUT_SECONDS`: Request timeout in seconds (default: `10`). Enforced on both HTTP client and generation config.
+- `CORS_ALLOWED_ORIGINS`: Comma-separated list of allowed frontend origins (default: `http://localhost:3000,http://localhost:5173,http://localhost:5000`).
 
 ### 2. Run Test Suite
-Verify all 13 golden test cases covering retrieval, generation, relevance, fallbacks, and API contracts:
+Verify the entire test suite with 100% passing tests:
 ```bash
-pytest tests/test_rag_pipeline.py -v
+python -m pytest
 ```
 
 ### 3. Start the FastAPI AI Service
@@ -100,127 +124,40 @@ Or via uvicorn directly:
 ```bash
 uvicorn ai-service.main:app --host 0.0.0.0 --port 8000 --reload
 ```
-Interactive OpenAPI documentation will be live at: **`http://localhost:8000/docs`**
+Interactive OpenAPI documentation is live at: **`http://localhost:8000/docs`**
 
 ---
 
-## 🤝 Integration Contract for Backend & Evaluation Team
+## 🤝 Canonical Integration Contracts
 
-### Subsystem Boundaries
-* **Member 3 (RAG/LLM - This Module)**: Responsible for knowledge retrieval, structured question generation, expected concepts, rubrics, and question relevance scoring.
-* **Member 4 (Evaluation Team)**: Responsible for evaluating candidate answers, concept coverage matching, and final candidate scoring. **The RAG module explicitly does NOT evaluate answers.**
-* **Member 2 (Backend Team)**: Calls `/api/ai/generate-question` to populate questions and `/api/ai/adaptive-context` to guide session progression.
+### 1. `POST /api/interview/start`
+Initializes a clean, invariant-verified `InterviewState` and generates the opening ice-breaker question.
 
----
+### 2. `POST /api/interview/turn`
+Processes one complete closed-loop turn:
+Candidate Answer → Answer Evaluation → State Update → Policy Decision → Target Concept → Next Question / Termination.
 
-### Core Endpoint: `POST /api/ai/generate-question`
+### 3. `POST /api/interview/scorecard`
+Synthesizes the final Selector Scorecard from accumulated candidate evidence:
+- Competency-level scores & confidence
+- Role alignment score & requirement coverage
+- Technical vs managerial evidence separation
+- Decision support summary for human selectors
 
-#### 1. Request JSON Schema
+### 4. `GET /health`
+Returns service health, loaded chunks, and explicit retrieval visibility:
 ```json
 {
-  "candidate": {
-    "id": "cand_001",
-    "name": "Jordan Lee",
-    "skills": ["Python", "FastAPI", "PostgreSQL"],
-    "experience_years": 3.0,
-    "education": "B.Tech in Computer Engineering"
-  },
-  "role": {
-    "id": "backend_engineer",
-    "title": "Backend / Full-Stack Software Engineer",
-    "required_skills": ["Python", "SQL", "REST APIs", "System Design"]
-  },
-  "stage": "role_technical",
-  "competency": "backend",
-  "difficulty": 3,
-  "previousQuestions": [
-    "Explain the difference between POST and PUT in REST APIs."
-  ],
-  "previousMissingConcepts": [
-    "refresh token rotation",
-    "token revocation"
-  ]
-}
-```
-*Note: `previousQuestions` and `previousMissingConcepts` are optional lists used for deduplication and adaptive follow-up.*
-
-#### 2. Frozen Response JSON Contract (10 Fields)
-Every response is guaranteed to return these 10 fields:
-```json
-{
-  "id": "q_7a9f1b2c",
-  "text": "Following up on our earlier discussion regarding refresh token rotation: How would you design a secure token-based authentication system using JWTs, and how do you handle token revocation when a user logs out?",
-  "stage": "role_technical",
-  "competency": "backend",
-  "difficulty": 3,
-  "expectedConcepts": [
-    "JWT structure",
-    "short-lived access tokens",
-    "refresh token rotation",
-    "httpOnly cookies",
-    "revocation strategy"
-  ],
-  "rubric": {
-    "poor": "Suggests storing sensitive secrets in JWT payload or believes JWTs cannot be revoked.",
-    "acceptable": "Explains JWT structure, short expiration with refresh tokens, and mentions a blacklist.",
-    "excellent": "Addresses XSS/CSRF mitigations, refresh token rotation with reuse detection, and distributed revocation via Redis TTL."
-  },
-  "relevanceScore": 89,
-  "sources": [
-    "chunk_tech_auth_01",
-    "OWASP-API-Security-Top10"
-  ],
-  "isFallback": false
+  "status": "healthy",
+  "service": "BoardRoom AI - RAG & Question Generation Subsystem",
+  "chunks_indexed": 39,
+  "retrieval_mode": "dense",
+  "dense_embeddings_active": true,
+  "llm_configured": true,
+  "llm_model": "gemini-2.5-flash"
 }
 ```
 
-#### 3. Error Responses
-* **HTTP 422 Unprocessable Entity**: Returned when required parameters are missing or out-of-range (e.g., `difficulty` outside 1–5). Returns standard FastAPI validation details.
-* **HTTP 500 Internal Server Error**: Fatal internal server error (safely avoided via internal try/catch fallback).
+### [DEPRECATED] `POST /api/ai/adaptive-context`
+Preserved strictly for backwards compatibility with legacy tests. Marked as deprecated in OpenAPI schema. All new integrations MUST use `/api/interview/*`.
 
-#### 4. Fallback Behaviour
-* If `GEMINI_API_KEY` is not present, the LLM service times out, or the LLM returns invalid/malformed JSON, the service **does not crash or return HTTP 500**.
-* Instead, it returns HTTP 200 with `isFallback: true`, serving a curated, stage-calibrated question directly from the 39-chunk knowledge base with full rubrics and expected concepts attached.
-
----
-
-### Adaptive Handoff Endpoint: `POST /api/ai/adaptive-context`
-Provides Member 2 and Member 4 with strategy recommendations without performing candidate evaluation.
-
-**Request:**
-```json
-{
-  "previousQuestions": ["Explain SQL index vs table scan"],
-  "coveredConcepts": ["SQL index", "table scan"],
-  "missingConcepts": ["B-Tree update overhead", "write amplification"],
-  "currentDifficulty": 3,
-  "lastScore": 55,
-  "currentCompetency": "database",
-  "currentStage": "role_technical"
-}
-```
-
-**Response:**
-```json
-{
-  "next_stage": "role_technical",
-  "next_competency": "database",
-  "next_difficulty": 3,
-  "strategy": "probe_missing_concept",
-  "missing_concepts_to_probe": ["B-Tree update overhead", "write amplification"],
-  "rationale": "Candidate missed critical concepts (B-Tree update overhead, write amplification); probing to evaluate baseline understanding."
-}
-```
-
----
-
-### Local Run Commands
-
-```bash
-# 1. Run full test suite (34 passing tests across unit, golden, and integration)
-pytest tests/ -v
-
-# 2. Start the AI service on port 8000
-python ai-service/main.py
-```
-*Live Swagger documentation will be available at:* **`http://localhost:8000/docs`**

@@ -114,16 +114,27 @@ async def evaluate_question_relevance(req: QuestionRelevanceRequest):
         raise HTTPException(status_code=500, detail=f"Relevance evaluation failed: {str(e)}")
 
 
-@router.post("/ai/adaptive-context", response_model=AdaptiveRecommendation, summary="Determine adaptive next step")
+@router.post(
+    "/ai/adaptive-context",
+    response_model=AdaptiveRecommendation,
+    deprecated=True,
+    summary="[DEPRECATED] Stateless adaptive context recommendation"
+)
 async def get_adaptive_context(req: AdaptiveContextRequest):
     """
-    Recommends next interview stage, competency, and difficulty calibration based on concept gaps.
+    [DEPRECATED] Legacy stateless adaptive context endpoint.
+    CANONICAL INTERVIEW FLOW: Use the stateful closed-loop interview engine at:
+      - POST /api/interview/start
+      - POST /api/interview/turn
+      - POST /api/interview/scorecard
+    This endpoint is preserved strictly for backwards compatibility and is marked deprecated.
     """
     try:
         recommendation = AdaptiveInterviewEngine.recommend_next_step(req)
         return recommendation
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Adaptive analysis failed: {str(e)}")
+
 
 
 @router.post("/ai/adaptive-policy-step", response_model=PolicyDecision, summary="Deterministic adaptive policy evaluation")

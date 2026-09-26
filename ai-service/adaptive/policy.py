@@ -45,10 +45,11 @@ COMPETENCY_LADDER = [
 STAGE_QUESTION_QUOTAS = {
     "ice_breaker": 1,
     "fundamentals": 1,
-    "role_technical": 1,
+    "role_technical": 2,
     "deep_dive": 1,
     "scenario_managerial": 1
 }
+
 
 
 class AdaptiveInterviewPolicy:
@@ -66,8 +67,8 @@ class AdaptiveInterviewPolicy:
         current_stage = state.current_stage
         current_comp = state.current_competency
 
-        # Rule 1: Termination Guard
-        if total_questions >= 6:
+        # Rule 1: Termination / Safety Cap Guard (Termination Engine holds authoritative decision)
+        if total_questions >= 8 or state.current_stage == "closing":
             return PolicyDecision(
                 next_stage="closing",
                 next_competency=current_comp,
@@ -75,9 +76,10 @@ class AdaptiveInterviewPolicy:
                 strategy="conclude_interview",
                 recommended_question_type="scenario",
                 target_concepts=[],
-                rationale="Interview journey reached required depth (6 questions across all stages).",
-                adaptive_reason="Conclude interview after comprehensive staged evaluation."
+                rationale=f"Interview reached maximum safety cap ({total_questions} questions completed).",
+                adaptive_reason="Conclude interview session at maximum safety cap."
             )
+
 
         # Rule 2: Persistent Weakness Remediation
         # If candidate has persistent weaknesses that remain unresolved
@@ -187,6 +189,19 @@ class AdaptiveInterviewPolicy:
         except ValueError:
             curr_stage_idx = 0
 
+        # Check if all stages in ladder have completed their quota
+        if curr_stage_idx >= len(STAGE_LADDER) - 1 and stage_count >= stage_quota:
+            return PolicyDecision(
+                next_stage="closing",
+                next_competency=current_comp,
+                next_difficulty=next_diff,
+                strategy="conclude_interview",
+                recommended_question_type="scenario",
+                target_concepts=[],
+                rationale=f"All interview stages completed through final stage '{current_stage}'. {diff_reason}",
+                adaptive_reason="Conclude interview after comprehensive staged ladder progression."
+            )
+
         # Check if stage quota is fulfilled
         if stage_count >= stage_quota and curr_stage_idx < len(STAGE_LADDER) - 1:
             next_stage_idx = curr_stage_idx + 1
@@ -211,6 +226,7 @@ class AdaptiveInterviewPolicy:
             # Stay in stage, but optionally pivot competency within role_technical or deep_dive
             next_stage = current_stage
             strategy = "pivot_competency" if stage_count > 0 else "progress_stage"
+
 
             if current_stage == "role_technical" and stage_count == 1:
                 next_comp = "database" if current_comp != "database" else "backend"

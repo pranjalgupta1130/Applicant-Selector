@@ -94,46 +94,19 @@ This zero-dependency script verifies `/health`, `/api/ai/generate-question`, and
 
 ---
 
-## 🧠 3. Endpoint 2: Adaptive Strategy Handoff (`Member 4 / Member 2 Handoff`)
+## ⚠️ 3. [DEPRECATED] Legacy Stateless Adaptive Handoff (`/api/ai/adaptive-context`)
+
+> **DEPRECATION NOTICE**: This endpoint is legacy and stateless. All new integrations MUST use the canonical closed-loop interview engine described in **Section 6** (`POST /api/interview/start`, `POST /api/interview/turn`, `POST /api/interview/scorecard`).
 
 * **URL**: `POST http://localhost:8000/api/ai/adaptive-context`
-* **Purpose**: Determines next stage, competency pivot, and difficulty shift based on previous performance.
-* **CRITICAL**: The RAG subsystem **DOES NOT score candidate answers**. Member 4 performs answer scoring and passes the resulting score & missing concepts here.
-
-### Request JSON Example
-```json
-{
-  "previousQuestions": ["Explain SQL index vs table scan"],
-  "coveredConcepts": ["SQL index", "table scan"],
-  "missingConcepts": ["B-Tree update overhead", "write amplification"],
-  "currentDifficulty": 3,
-  "lastScore": 55,
-  "currentCompetency": "database",
-  "currentStage": "role_technical"
-}
-```
-
-### Response JSON Example
-```json
-{
-  "next_stage": "role_technical",
-  "next_competency": "database",
-  "next_difficulty": 3,
-  "strategy": "probe_missing_concept",
-  "missing_concepts_to_probe": [
-    "B-Tree update overhead",
-    "write amplification"
-  ],
-  "rationale": "Candidate missed critical concepts (B-Tree update overhead, write amplification); probing to evaluate baseline understanding."
-}
-```
+* **Status**: `Deprecated: true` in OpenAPI specification. Kept solely for backwards compatibility with legacy tests.
 
 ---
 
 ## 🛡️ 4. Fallback & Error Behaviors
 
 ### Fallback Guarantee (Zero Crashes)
-* If `GEMINI_API_KEY` is not present, the LLM API is unreachable, or the LLM returns invalid JSON, the endpoint **does not crash or return HTTP 500**.
+* If `GEMINI_API_KEY` is not present, the LLM request times out (enforced at `LLM_TIMEOUT_SECONDS = 10`), or the LLM returns invalid JSON, the endpoint **does not crash or return HTTP 500**.
 * It returns HTTP 200 with `isFallback: true`, serving a curated, stage-calibrated question directly from the 39-chunk knowledge base with full rubrics and expected concepts.
 
 ### Input Error Handling
@@ -153,7 +126,9 @@ This zero-dependency script verifies `/health`, `/api/ai/generate-question`, and
 ---
 
 ## 🌐 5. CORS & Network Integration
-* CORS is pre-configured with `allow_origins=["*"]`, allowing direct browser testing from React (`http://localhost:5173`) and Node (`http://localhost:5000`).
+* CORS is configured via `settings.CORS_ALLOWED_ORIGINS` (defaulting to development origins: `http://localhost:3000,http://localhost:5173,http://localhost:5000,http://127.0.0.1:3000,http://127.0.0.1:5173,http://127.0.0.1:5000`).
+* Explicit origins are used so `allow_credentials=True` is 100% compliant with browser Fetch & CORS specifications. Additional origins can be configured in `.env`.
+
 
 ---
 

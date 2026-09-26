@@ -14,56 +14,13 @@ from adaptive.prerequisites import ConceptPrerequisiteEngine
 from adaptive.policy import PolicyDecision
 
 
-COMPETENCY_CORE_CONCEPTS: Dict[str, List[str]] = {
-    "backend": [
-        "REST APIs",
-        "statelessness",
-        "HTTP status codes",
-        "idempotency",
-        "JWT authentication",
-        "refresh token rotation",
-        "concurrency race conditions",
-        "mutex synchronization"
-    ],
-    "database": [
-        "B-Tree indexing",
-        "composite indexing",
-        "indexing trade-offs",
-        "write amplification",
-        "database transactions",
-        "ACID guarantees",
-        "database sharding",
-        "cross-shard queries"
-    ],
-    "system_design": [
-        "horizontal scaling",
-        "load balancing",
-        "stateless application tier",
-        "read replicas",
-        "caching strategies",
-        "cache invalidation",
-        "distributed locking",
-        "two-phase commit"
-    ],
-    "cs_fundamentals": [
-        "time complexity",
-        "space complexity",
-        "hash tables",
-        "threads vs processes",
-        "memory management"
-    ],
-    "scenario_managerial": [
-        "incident triage",
-        "post-mortem analysis",
-        "technical debt management",
-        "code review practices"
-    ],
-    "ice_breaker": [
-        "software architecture overview",
-        "recent technical project",
-        "core engineering strengths"
-    ]
-}
+from core.concepts import (
+    COMPETENCY_CORE_CONCEPTS,
+    get_canonical_concepts_for_competency,
+    get_all_canonical_concepts
+)
+
+
 
 
 class TargetConceptSelector:
