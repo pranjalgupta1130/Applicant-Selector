@@ -83,6 +83,9 @@ class InterviewState(BaseModel):
     concept_demonstration_counts: Dict[str, int] = Field(default_factory=dict)
     concept_missing_counts: Dict[str, int] = Field(default_factory=dict)
     concept_partial_counts: Dict[str, int] = Field(default_factory=dict)
+    turns: List[Dict[str, Any]] = Field(default_factory=list, description="Historical turn logs")
+    prerequisite_issues: List[str] = Field(default_factory=list, description="Detected prerequisite gaps")
+
 
     def _compute_score_trend(self) -> str:
         """Computes rolling performance trend across recent 2-3 scores."""
@@ -237,6 +240,19 @@ class InterviewState(BaseModel):
                 self.consistently_demonstrated_concepts.remove(m)
             if m in self.demonstrated_once_concepts:
                 self.demonstrated_once_concepts.remove(m)
+
+        self.turns.append({
+            "turn": len(self.previous_questions),
+            "question_id": question_id,
+            "question_text": question_text,
+            "question_type": question_type,
+            "stage": stage,
+            "competency": competency,
+            "difficulty": difficulty,
+            "score": score,
+            "covered_concepts": list(covered),
+            "missing_concepts": list(missing)
+        })
 
     def is_persistent_weakness(self, concept: str) -> bool:
         """Returns True if concept has been missed/weak across multiple turns."""

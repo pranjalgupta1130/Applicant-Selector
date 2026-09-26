@@ -153,3 +153,239 @@ class AdaptiveContextRequest(BaseModel):
     lastScore: Optional[int] = Field(None, ge=0, le=100)
     currentCompetency: str = "backend"
     currentStage: str = "role_technical"
+
+
+# ---------------------------------------------------------
+# Phase C: Closed-Loop Turn & Orchestration Contracts
+# ---------------------------------------------------------
+
+class EvaluationResult(BaseModel):
+    score: int = Field(..., ge=0, le=100, description="Candidate answer score (0-100)")
+    coveredConcepts: List[str] = Field(default_factory=list, description="Concepts successfully demonstrated in answer")
+    missingConcepts: List[str] = Field(default_factory=list, description="Concepts missing or inadequately addressed")
+    reasoning: str = Field(default="", description="Explainable rationale for the score and concept attribution")
+    confidence: float = Field(default=0.85, ge=0.0, le=1.0, description="Evaluator confidence in scoring")
+
+
+class DecisionObject(BaseModel):
+    strategy: str = Field(..., description="Adaptive strategy chosen")
+    nextDifficulty: int = Field(..., ge=1, le=5, description="Calibrated difficulty for next question")
+    nextCompetency: str = Field(..., description="Target competency for next question")
+    targetConcepts: List[str] = Field(default_factory=list, description="Target concepts chosen for next question")
+    questionType: str = Field(..., description="Recommended question type")
+    reason: str = Field(..., description="Machine-readable decision rationale based on actual state")
+
+
+class DecisionTrace(BaseModel):
+    previousScore: Optional[int] = None
+    trend: str = Field(default="neutral", description="improving | declining | stable | neutral")
+    missingConcepts: List[str] = Field(default_factory=list)
+    persistentWeaknesses: List[str] = Field(default_factory=list)
+    prerequisiteIssues: List[str] = Field(default_factory=list)
+    strategy: str
+    nextDifficulty: int = Field(ge=1, le=5)
+    nextCompetency: str
+    questionType: str
+    targetConcepts: List[str] = Field(default_factory=list)
+    reason: str
+
+
+class TerminationDecision(BaseModel):
+    shouldTerminate: bool = Field(default=False, description="Whether the interview should conclude")
+    reason: str = Field(..., description="Explainable termination rationale")
+    evidenceCoverage: float = Field(default=0.0, ge=0.0, le=1.0, description="Evidence coverage proportion")
+    details: Dict[str, Any] = Field(default_factory=dict, description="Diagnostic criteria details")
+
+
+class TurnObject(BaseModel):
+    question: QuestionObject
+    answer: str
+    evaluation: EvaluationResult
+    decision: DecisionObject
+
+
+class TurnRequest(BaseModel):
+    interviewState: Optional[Dict[str, Any]] = Field(default=None, description="Current interview state object (or None to initialize)")
+    currentQuestion: QuestionObject = Field(..., description="The question being answered in this turn")
+    candidateAnswer: str = Field(..., description="The candidate's response text")
+    evaluation: Optional[EvaluationResult] = Field(default=None, description="Optional evaluation result from Member 4")
+    candidate: Optional[CandidateProfile] = Field(default_factory=CandidateProfile)
+    role: Optional[TargetRole] = Field(default_factory=TargetRole)
+
+
+class TurnResponse(BaseModel):
+    updatedState: Dict[str, Any] = Field(..., description="Serialized updated InterviewState")
+    evaluation: EvaluationResult = Field(..., description="Result of answer evaluation")
+    decision: DecisionObject = Field(..., description="Adaptive decision for the next step")
+    nextQuestion: Optional[QuestionObject] = Field(None, description="Next generated question (None if terminated)")
+    termination: TerminationDecision = Field(..., description="Structured termination evaluation")
+    trace: DecisionTrace = Field(..., description="Machine-readable decision trace")
+
+
+class InterviewStartRequest(BaseModel):
+    candidate: Optional[CandidateProfile] = Field(default_factory=CandidateProfile)
+    role: Optional[TargetRole] = Field(default_factory=TargetRole)
+
+
+class InterviewStartResponse(BaseModel):
+    interviewState: Dict[str, Any] = Field(..., description="Initialized clean InterviewState")
+    openingQuestion: QuestionObject = Field(..., description="First interview question (ice_breaker)")
+
+
+# ---------------------------------------------------------
+# Phase D: Evidence-Based Competency Assessment & Scorecard
+# ---------------------------------------------------------
+
+class ConceptEvidenceProvenance(BaseModel):
+    turnId: int
+    questionId: str
+    questionType: str
+    stage: str
+    score: int
+    isDemonstrated: bool
+
+
+class ConceptEvidence(BaseModel):
+    concept: str
+    competency: str
+    testedCount: int = 0
+    demonstratedCount: int = 0
+    partialCount: int = 0
+    missedCount: int = 0
+    highestScore: int = 0
+    latestScore: int = 0
+    averageScore: float = 0.0
+    questionTypes: List[str] = Field(default_factory=list)
+    stages: List[str] = Field(default_factory=list)
+    masteryLevel: str = "untested"
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    provenance: List[ConceptEvidenceProvenance] = Field(default_factory=list)
+
+
+class CompetencyEvidence(BaseModel):
+    competency: str
+    score: int = Field(ge=0, le=100, description="Observed quality of answers in this competency (0-100)")
+    confidence: float = Field(ge=0.0, le=1.0, description="Evidence confidence based on demonstration depth (0.0-1.0)")
+    coverage: float = Field(default=0.0, ge=0.0, le=1.0, description="Proportion of role concepts tested (0.0-1.0)")
+    status: str = Field(..., description="demonstrated | partially_demonstrated | weak | insufficient_evidence | untested")
+    testedConcepts: List[str] = Field(default_factory=list)
+    demonstratedConcepts: List[str] = Field(default_factory=list)
+    partialConcepts: List[str] = Field(default_factory=list)
+    missingConcepts: List[str] = Field(default_factory=list)
+    evidenceCount: int = Field(default=0, description="Total turns evaluating this competency")
+    strongEvidence: List[str] = Field(default_factory=list)
+    weakEvidence: List[str] = Field(default_factory=list)
+    contradictoryEvidence: List[str] = Field(default_factory=list)
+    reasoning: str = Field(..., description="Explainable rationale referencing turns and concepts")
+
+
+class StrengthItem(BaseModel):
+    area: str
+    competency: str
+    evidence: str
+    confidence: float = Field(ge=0.0, le=1.0)
+    supportingTurns: List[int] = Field(default_factory=list)
+
+
+class GapItem(BaseModel):
+    area: str
+    competency: str
+    evidence: str
+    severity: str = Field(default="moderate", description="low | moderate | high")
+    supportingTurns: List[int] = Field(default_factory=list)
+    prerequisiteStatus: Optional[str] = None
+
+
+class RoleAlignmentItem(BaseModel):
+    requirement: str
+    status: str = Field(..., description="demonstrated | partially_demonstrated | insufficiently_tested | missing")
+    evidence: str
+    confidence: float = Field(ge=0.0, le=1.0)
+
+
+class RoleAlignmentAnalysis(BaseModel):
+    roleId: str
+    roleTitle: str
+    alignmentScore: int = Field(ge=0, le=100)
+    demonstratedRequirements: List[str] = Field(default_factory=list)
+    partiallyDemonstratedRequirements: List[str] = Field(default_factory=list)
+    insufficientlyTestedRequirements: List[str] = Field(default_factory=list)
+    missingRequirements: List[str] = Field(default_factory=list)
+    details: List[RoleAlignmentItem] = Field(default_factory=list)
+    rationale: str
+
+
+class EvidenceTimelineItem(BaseModel):
+    turn: int
+    stage: str
+    competency: str
+    difficulty: int
+    questionId: str
+    questionText: str
+    questionType: str
+    score: int
+    coveredConcepts: List[str] = Field(default_factory=list)
+    missingConcepts: List[str] = Field(default_factory=list)
+    evidenceStatus: str = Field(..., description="demonstrated | partially_demonstrated | missing | recovered")
+    summary: str
+
+
+class CompetencyCoverageData(BaseModel):
+    competency: str
+    coverage: float = Field(ge=0.0, le=1.0)
+    score: int = Field(ge=0, le=100)
+    confidence: float = Field(ge=0.0, le=1.0)
+    status: str
+
+
+class CoverageDashboardData(BaseModel):
+    overallEvidenceCoverage: float = Field(ge=0.0, le=1.0)
+    competencyCoverage: List[CompetencyCoverageData] = Field(default_factory=list)
+    testedConceptsCount: int = 0
+    demonstratedConceptsCount: int = 0
+    missingConceptsCount: int = 0
+    stagesVisitedCount: int = 0
+
+
+class DecisionSupportReport(BaseModel):
+    technicalEvidence: str
+    managerialEvidence: str
+    roleAlignmentEvidence: str
+    areasRequiringFurtherAssessment: List[str] = Field(default_factory=list)
+    recommendationNote: str = "Decision-support summary for human selector. BoardRoom AI does not make autonomous hiring decisions."
+
+
+class FinalScorecard(BaseModel):
+    candidate: CandidateProfile
+    role: TargetRole
+    overallScore: int = Field(ge=0, le=100, description="Weighted composite competency score (0-100)")
+    overallConfidence: float = Field(ge=0.0, le=1.0, description="Weighted composite evidence confidence (0.0-1.0)")
+    competencies: List[CompetencyEvidence] = Field(default_factory=list)
+    strengths: List[StrengthItem] = Field(default_factory=list)
+    gaps: List[GapItem] = Field(default_factory=list)
+    coverage: CoverageDashboardData
+    roleAlignment: RoleAlignmentAnalysis
+    decisionSupport: DecisionSupportReport
+    evidenceTimeline: List[EvidenceTimelineItem] = Field(default_factory=list)
+    explanation: str
+
+
+class ScorecardRequest(BaseModel):
+    interviewState: Optional[Dict[str, Any]] = Field(default=None, description="Completed interview state dict or object")
+    candidate: Optional[CandidateProfile] = Field(default_factory=CandidateProfile)
+    role: Optional[TargetRole] = Field(default_factory=TargetRole)
+    competencyWeights: Optional[Dict[str, float]] = Field(default=None, description="Optional custom weights per competency")
+
+
+class ScorecardResponse(BaseModel):
+    scorecard: FinalScorecard
+    competencies: List[CompetencyEvidence]
+    strengths: List[StrengthItem]
+    gaps: List[GapItem]
+    evidenceTimeline: List[EvidenceTimelineItem]
+    coverage: CoverageDashboardData
+    roleAlignment: RoleAlignmentAnalysis
+    decisionSupport: DecisionSupportReport
+    explanation: str
+
+

@@ -15,7 +15,13 @@ from core.schemas import (
     QuestionRelevanceBreakdown,
     AdaptiveContextRequest,
     CandidateProfile,
-    TargetRole
+    TargetRole,
+    TurnRequest,
+    TurnResponse,
+    InterviewStartRequest,
+    InterviewStartResponse,
+    ScorecardRequest,
+    ScorecardResponse
 )
 from rag.retriever import KnowledgeRetriever
 from generator.pipeline import QuestionGeneratorPipeline
@@ -23,12 +29,16 @@ from evaluator.relevance import QuestionRelevanceEvaluator
 from adaptive.strategy import AdaptiveInterviewEngine, AdaptiveRecommendation
 from adaptive.state import InterviewState
 from adaptive.policy import AdaptiveInterviewPolicy, PolicyDecision
+from adaptive.orchestrator import InterviewOrchestrator
+from adaptive.scorecard_engine import ScorecardEngine
 
 router = APIRouter(prefix="/api", tags=["RAG & Question Generation"])
+
 
 # Shared pipeline instances
 _retriever = KnowledgeRetriever()
 _pipeline = QuestionGeneratorPipeline(retriever=_retriever)
+_orchestrator = InterviewOrchestrator(retriever=_retriever, generator=_pipeline)
 
 
 class QuestionRelevanceRequest(BaseModel):
@@ -131,3 +141,88 @@ async def evaluate_adaptive_policy_step(state: InterviewState):
         return decision
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Adaptive policy evaluation failed: {str(e)}")
+
+
+@router.post("/interview/start", response_model=InterviewStartResponse, summary="Initialize clean interview state and opening question")
+async def start_interview_session(req: Optional[InterviewStartRequest] = None):
+    """
+    Initializes a fresh InterviewState and generates the opening ice-breaker question.
+    """
+    try:
+        req = req or InterviewStartRequest()
+        return _orchestrator.start_interview(
+            candidate=req.candidate,
+            role=req.role
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Interview initiation failed: {str(e)}")
+
+
+@router.post("/interview/turn", response_model=TurnResponse, summary="Process completed interview turn closed-loop")
+async def process_interview_turn(req: TurnRequest):
+    """
+    Executes one complete closed-loop turn:
+    Candidate Answer -> Answer Evaluation -> Concept Coverage -> Mastery Update ->
+    Trend/Streak Update -> Adaptive Policy Decision -> Target Concept Selection ->
+    RAG Retrieval -> Next Question.
+    """
+    try:
+        response = _orchestrator.process_turn(
+            current_question=req.currentQuestion,
+            candidate_answer=req.candidateAnswer,
+            interview_state=req.interviewState,
+            evaluation=req.evaluation,
+            candidate=req.candidate,
+            role=req.role
+        )
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Closed-loop turn processing failed: {str(e)}")
+
+
+@router.post("/interview/scorecard", response_model=ScorecardResponse, summary="Generate evidence-based competency scorecard")
+async def generate_candidate_scorecard(req: ScorecardRequest):
+    """
+    Synthesizes the complete interview trajectory into an evidence-based FinalScorecard.
+    Aggregates:
+    - Competency scores and confidence
+    - Evidence-backed strengths & gaps
+    - Role alignment analysis
+    - Chronological evidence timeline
+    - Dashboard coverage metrics
+    - Human decision support (strictly non-autonomous)
+    """
+    try:
+        raw_state = req.interviewState
+        if isinstance(raw_state, InterviewState):
+            state = raw_state
+        elif isinstance(raw_state, dict) and raw_state:
+            state = InterviewState(**raw_state)
+        else:
+            state = InterviewState(
+                candidate_id=req.candidate.id or "cand_default",
+                role_id=req.role.id or "backend_engineer"
+            )
+
+        scorecard = ScorecardEngine.generate_scorecard(
+            state=state,
+            candidate=req.candidate,
+            role=req.role,
+            custom_weights=req.competencyWeights
+        )
+
+        return ScorecardResponse(
+            scorecard=scorecard,
+            competencies=scorecard.competencies,
+            strengths=scorecard.strengths,
+            gaps=scorecard.gaps,
+            evidenceTimeline=scorecard.evidenceTimeline,
+            coverage=scorecard.coverage,
+            roleAlignment=scorecard.roleAlignment,
+            decisionSupport=scorecard.decisionSupport,
+            explanation=scorecard.explanation
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Scorecard generation failed: {str(e)}")
+
+
