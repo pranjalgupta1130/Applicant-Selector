@@ -5,6 +5,7 @@ strict Pydantic schema validation, and reliable fallback question selection.
 Conforms to Hackathon Master Plan Section 6.2, 13.1, 16, and Phase 3.
 """
 
+import hashlib
 import json
 import uuid
 import re
@@ -403,10 +404,31 @@ Respond with valid JSON according to the schema."""
             expected_concepts = selected_chunk.expected_concepts
             sources = [selected_chunk.chunk_id, selected_chunk.source]
 
-        # If previous missing concepts exist, adapt the question text
+        # If previous missing concepts exist, adapt the question text.
+        #
+        # The lead-in is varied because a single fixed phrase made every question
+        # after the first open with the identical boilerplate, which reads as
+        # templated even when the questions underneath are distinct and
+        # well-targeted -- the most common reason this pipeline is described as
+        # producing "static" questions. Selection is a hash of the question and
+        # the gap, so it is varied across a session but reproducible for a demo.
         if previous_missing_concepts:
             gap_str = ", ".join(previous_missing_concepts[:2])
-            selected_question_text = f"Following up on our earlier discussion regarding {gap_str}: {selected_question_text}"
+            lead_ins = [
+                "Coming back to {gap}: {q}",
+                "Staying on {gap} for a moment: {q}",
+                "We didn't fully cover {gap} earlier. {q}",
+                "Let's return to {gap}. {q}",
+                "On the subject of {gap}: {q}",
+                "To close the loop on {gap}: {q}",
+            ]
+            pick = int(
+                hashlib.sha1(f"{gap_str}|{selected_question_text}".encode("utf-8")).hexdigest(),
+                16,
+            ) % len(lead_ins)
+            selected_question_text = lead_ins[pick].format(
+                gap=gap_str, q=selected_question_text
+            )
 
         return QuestionObject(
             id=f"q_{uuid.uuid4().hex[:8]}",
