@@ -1,7 +1,98 @@
-# BoardRoom AI — RAG Subsystem Integration Guide
-**Target Audience**: Member 2 (Node/Express Backend) & Member 4 (Answer Evaluation)  
-**Author**: Member 3 (RAG / LLM Engineer)  
-**Status**: FROZEN & READY FOR CONSUMPTION  
+# BoardRoom AI (PSWB01) — System Integration Guide
+**Target Audience**: Member 1 (Lovable React Frontend `boardroom-ai/`), Member 2 (Backend Integration), & Selection Board Reviewers  
+**Author**: Senior AI/RAG Engineer & Integration Architect  
+**Status**: FROZEN & DEMO READY (194 tests passed, 14/14 preflight checks passed)
+
+---
+
+## 🏛️ Special Section: Member 1 Frontend Integration (`boardroom-ai/`)
+
+The BoardRoom AI backend is fully configured to interface directly with your React/Vite application in `boardroom-ai/` via HTTP/JSON.
+
+### 1. Network & CORS Configuration
+- **AI Service Base URL**: `http://localhost:8000`
+- **Supported Frontend Origins**: `http://localhost:8080`, `http://localhost:5173`, `http://localhost:3000`, `http://127.0.0.1:8080`, `http://127.0.0.1:5173`
+- **Credentials Support**: `allow_credentials=True` is enabled for all listed origins.
+- **Interactive Swagger Documentation**: `http://localhost:8000/docs`
+
+### 2. Primary 3-Step Interview API Contract
+Your frontend only needs three core API endpoints to run the complete 7-stage Board Room simulation:
+
+1. **`POST /api/interview/start`**:
+   - Call this when the selector clicks **"Start Board Room Interview"**.
+   - Sends the candidate profile and advertised post.
+   - Returns the opening ice-breaker question and clean `InterviewState`.
+2. **`POST /api/interview/turn`**:
+   - Call this each time the candidate submits their answer.
+   - Automatically evaluates the answer, detects covered/missing concepts, updates mastery, runs the adaptive policy, and returns the next question with an explainable `DecisionTrace`.
+3. **`POST /api/interview/scorecard`**:
+   - Call this when `isComplete === true` or when the board concludes the session.
+   - Returns the comprehensive `FinalScorecard` with evidence timeline, role alignment, and non-autonomous decision support.
+
+### 3. Demonstration DRDO Post & Candidate JSON (Ready for UI)
+
+#### Advertised Post: Scientist 'B' — Radar & Embedded Real-Time Systems
+```json
+{
+  "id": "DRDO-RAC-2026-ECE-001",
+  "title": "Scientist 'B' — Radar & Embedded Real-Time Systems",
+  "domain": "electronics_radar",
+  "discipline": "Electronics & Communication Engineering",
+  "organization_context": "DRDO Radar & Avionics Systems Development Laboratory",
+  "required_skills": [
+    "Digital Signal Processing",
+    "Embedded Real-Time Systems",
+    "Radar RF Systems"
+  ],
+  "technical_requirements": [
+    "Pulse Doppler & FMCW radar signal processing",
+    "RTOS concurrency, priority inheritance & ISR latency",
+    "FIR/IIR filter design and Nyquist-Shannon sampling",
+    "MIL-STD-1553B / ARINC 429 avionics bus architecture"
+  ],
+  "managerial_requirements": [
+    "Design review rigor (PDR/CDR)",
+    "RTCA DO-254 / DO-178C safety standards",
+    "Engineering risk management"
+  ]
+}
+```
+
+#### Demo Candidate: Arjun Sharma
+```json
+{
+  "id": "DRDO-APP-2026-9812",
+  "name": "Arjun Sharma",
+  "domain": "electronics_radar",
+  "discipline": "Electronics & Communication Engineering",
+  "specialization": "Radar Signal Processing & Embedded RTOS",
+  "education": "M.Tech in Signal Processing & Embedded Systems",
+  "experience_years": 2.5,
+  "skills": [
+    "Radar Signal Processing",
+    "Embedded C",
+    "FreeRTOS",
+    "DSP (MATLAB/C)",
+    "FMCW Radar",
+    "ARM Cortex-M"
+  ],
+  "claimed_expertise": [
+    "Real-time embedded radar signal processing",
+    "Low-latency interrupt service routines on ARM Cortex-M",
+    "Pulse compression and FMCW beat frequency extraction"
+  ]
+}
+```
+
+### 4. 7 Board Room Interview Stages to Render in the UI
+Your UI stage indicator progress bar can display these 7 stages:
+1. `ice_breaking` — Candidate background & research context
+2. `expertise_validation` — Probing claimed resume competencies
+3. `core_technical` — Core engineering fundamentals against post requirements
+4. `deep_dive` — Mathematical rigor, edge cases & prerequisite probing
+5. `application_scenario` — Practical hardware constraints & trade-offs
+6. `system_engineering_design` — High-reliability architecture & safety standards
+7. `techno_managerial` — Engineering governance, PDR/CDR, and risk management
 
 ---
 
@@ -17,12 +108,17 @@ python ai-service/main.py
 The service starts locally on: **`http://localhost:8000`**  
 Interactive OpenAPI / Swagger UI: **`http://localhost:8000/docs`**
 
-### Pre-Integration Smoke Test
-Before connecting your Node server or test scripts, run:
+### Pre-Integration Subsystem Verification
+Before connecting your frontend or backend scripts, run the automated 14-point preflight check:
 ```bash
-python smoke_test.py
+python scripts/preflight.py
 ```
-This zero-dependency script verifies `/health`, `/api/ai/generate-question`, and `/api/ai/adaptive-context` in ~2 seconds.
+This comprehensive script verifies dependencies, KB chunk integrity (77 chunks), dense SentenceTransformer loading, semantic retrieval benchmarks, cross-domain isolation, answer evaluation, closed-loop adaptive turns, scorecard generation, fallback readiness, and the full test suite in ~30 seconds.
+
+To run the complete interactive Board Room simulation in your terminal:
+```bash
+python scripts/simulate_boardroom.py
+```
 
 ---
 
@@ -294,8 +390,13 @@ Processes a completed interview turn in a closed loop.
     "score": 88,
     "coveredConcepts": ["JWT authentication", "refresh token rotation"],
     "missingConcepts": [],
+    "confidence": 0.90,
     "reasoning": "Candidate correctly explained short-lived tokens and rotation mechanism.",
-    "confidence": 0.90
+    "technicalCorrectness": "accurate",
+    "completeness": "complete",
+    "relevance": "directly_relevant",
+    "depth": "adequate",
+    "isFallback": false
   },
   "decision": {
     "strategy": "escalate_difficulty",

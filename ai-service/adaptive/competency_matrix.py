@@ -56,6 +56,42 @@ ROLE_COMPETENCY_PROFILES: Dict[str, Dict[str, Any]] = {
             "database": 1,
             "system_design": 1
         }
+    },
+    "scientist_b_ece": {
+        "title": "Scientist 'B' — Electronics & Communication Engineering",
+        "domain": "electronics_radar",
+        "weights": {
+            "embedded_realtime_systems": 0.30,
+            "digital_signal_processing": 0.25,
+            "radar_rf_systems": 0.20,
+            "avionics_communication": 0.15,
+            "techno_managerial": 0.10
+        },
+        "min_evidence_target": {
+            "embedded_realtime_systems": 2,
+            "digital_signal_processing": 1,
+            "radar_rf_systems": 1,
+            "avionics_communication": 1,
+            "techno_managerial": 1
+        }
+    },
+    "scientist_b_radar_embedded": {
+        "title": "Scientist 'B' — Radar & Embedded Systems",
+        "domain": "electronics_radar",
+        "weights": {
+            "radar_rf_systems": 0.30,
+            "embedded_realtime_systems": 0.30,
+            "digital_signal_processing": 0.20,
+            "avionics_communication": 0.10,
+            "techno_managerial": 0.10
+        },
+        "min_evidence_target": {
+            "radar_rf_systems": 2,
+            "embedded_realtime_systems": 2,
+            "digital_signal_processing": 1,
+            "avionics_communication": 1,
+            "techno_managerial": 1
+        }
     }
 }
 
@@ -70,7 +106,18 @@ ROLE_ALIASES: Dict[str, str] = {
     "fullstack engineer": "fullstack_engineer",
     "software engineer": "software_engineer",
     "sde": "software_engineer",
-    "general": "software_engineer"
+    "general": "software_engineer",
+    # DRDO / RAC aliases
+    "scientist_b": "scientist_b_ece",
+    "scientist b": "scientist_b_ece",
+    "scientist_b_ece": "scientist_b_ece",
+    "scientist b ece": "scientist_b_ece",
+    "drdo": "scientist_b_ece",
+    "drdo_scientist_b": "scientist_b_ece",
+    "radar": "scientist_b_radar_embedded",
+    "radar engineer": "scientist_b_radar_embedded",
+    "embedded engineer": "scientist_b_ece",
+    "drdo-rac-2026-ece-001": "scientist_b_ece"
 }
 
 

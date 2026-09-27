@@ -67,6 +67,13 @@ class InterviewOrchestrator:
         candidate = candidate or CandidateProfile()
         role = role or TargetRole()
 
+        # Resolve domain if not explicitly provided
+        if not getattr(role, "domain", None):
+            if any(k in role.id.lower() for k in ("ece", "radar", "drdo", "scientist")):
+                role.domain = "electronics_radar"
+            else:
+                role.domain = "cyber_computing"
+
         state = InterviewState(
             candidate_id=candidate.id or "cand_default",
             role_id=role.id or "backend_engineer",
@@ -107,6 +114,12 @@ class InterviewOrchestrator:
         """
         candidate = candidate or CandidateProfile()
         role = role or TargetRole()
+
+        if not getattr(role, "domain", None):
+            if any(k in role.id.lower() for k in ("ece", "radar", "drdo", "scientist")):
+                role.domain = "electronics_radar"
+            else:
+                role.domain = "cyber_computing"
 
         # 1. State Hydration
         state = self._hydrate_state(interview_state, current_question, candidate, role)

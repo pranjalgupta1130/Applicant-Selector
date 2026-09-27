@@ -19,6 +19,13 @@ class CandidateProfile(BaseModel):
     experience_years: Optional[float] = Field(default=2.0, description="Years of relevant experience")
     education: Optional[str] = "B.Tech in Computer Engineering"
     notes: Optional[str] = None
+    # DRDO / RAC Candidate Profile Extensions
+    discipline: Optional[str] = Field(default="Computer Science & Engineering", description="Academic/Professional discipline")
+    specialization: Optional[str] = Field(default=None, description="Detailed domain specialization")
+    claimed_expertise: List[str] = Field(default_factory=list, description="Specific claims declared in CV/application")
+    projects: List[str] = Field(default_factory=list, description="Candidate project titles or briefs")
+    domain: Optional[str] = Field(default=None, description="Resolved scientific/engineering domain")
+    self_declared_competencies: Dict[str, str] = Field(default_factory=dict, description="Candidate self-declared rating per competency")
 
 
 class TargetRole(BaseModel):
@@ -27,6 +34,12 @@ class TargetRole(BaseModel):
     description: Optional[str] = "Designs, builds, and maintains server-side applications, APIs, and databases."
     required_skills: List[str] = Field(default_factory=lambda: ["Python", "SQL", "REST APIs", "System Design", "Git"])
     min_experience_years: Optional[float] = 1.0
+    # DRDO Advertised Post Extensions
+    domain: Optional[str] = Field(default=None, description="DRDO domain key, e.g. electronics_radar")
+    discipline: Optional[str] = Field(default=None, description="Discipline, e.g. Electronics & Communication Engineering")
+    advertised_post_id: Optional[str] = Field(default=None, description="Official post requisition ID")
+    technical_requirements: List[str] = Field(default_factory=list, description="Essential advertised technical criteria")
+    managerial_requirements: List[str] = Field(default_factory=list, description="Advertised techno-managerial / leadership criteria")
 
 
 # ---------------------------------------------------------
@@ -52,6 +65,13 @@ class KnowledgeChunk(BaseModel):
     rubric: RubricCriteria
     source: str = "KnowledgeBase-Internal"
     metadata: Dict[str, Any] = Field(default_factory=dict)
+    # Domain-Aware Provenance Extensions
+    domain: str = Field(default="cyber_computing", description="DRDO scientific domain key")
+    discipline: Optional[str] = Field(default=None, description="Discipline identifier")
+    topic: Optional[str] = Field(default=None, description="Specific technical topic")
+    source_title: Optional[str] = Field(default=None, description="Formal source document/standard title")
+    source_type: Optional[str] = Field(default=None, description="official_standard | textbook | research_paper")
+    source_reference: Optional[str] = Field(default=None, description="Public citation/reference identifier")
 
 
 # ---------------------------------------------------------
@@ -84,6 +104,9 @@ class QuestionObject(BaseModel):
     questionType: Optional[str] = Field(default="conceptual", description="conceptual | implementation | debugging | trade_off | scenario | design | follow_up")
     adaptiveReason: Optional[str] = Field(default=None, description="Adaptive justification for question selection")
     questionExplanation: Optional[Dict[str, Any]] = Field(default=None, description="Internal explanation of role alignment, candidate alignment, difficulty, and target concepts")
+    # DRDO Domain Extensions
+    domain: Optional[str] = Field(default=None, description="DRDO domain key, e.g. electronics_radar")
+    candidateClaim: Optional[str] = Field(default=None, description="Candidate claim being probed in expertise validation")
 
 
 
@@ -99,6 +122,8 @@ class QuestionRelevanceBreakdown(BaseModel):
     specificityClarity: int = Field(ge=0, le=100, description="Weight 10%")
     totalScore: int = Field(ge=0, le=100, description="Weighted total score")
     rationale: str = Field(..., description="Concise explainable rationale")
+    domainAlignment: Optional[int] = Field(default=None, description="Domain boundary score (0-100)")
+    groundingScore: Optional[int] = Field(default=None, description="Source provenance grounding score (0-100)")
 
 
 # ---------------------------------------------------------
@@ -112,6 +137,8 @@ class RetrievalRequest(BaseModel):
     stage: Optional[str] = None
     difficulty: Optional[int] = None
     top_k: int = Field(default=3, ge=1, le=10)
+    domain: Optional[str] = Field(default=None, description="DRDO scientific domain key, e.g. electronics_radar")
+    prohibited_domains: Optional[List[str]] = Field(default_factory=list, description="Strictly prohibited cross-domains")
 
 
 class RetrievalResult(BaseModel):
@@ -125,6 +152,9 @@ class RetrievalResult(BaseModel):
     expected_concepts: List[str]
     rubric: RubricCriteria
     source: str
+    domain: Optional[str] = Field(default="cyber_computing", description="DRDO scientific domain key")
+    source_title: Optional[str] = None
+    source_reference: Optional[str] = None
 
 
 class RetrievalResponse(BaseModel):
@@ -189,6 +219,11 @@ class EvaluationResult(BaseModel):
     missingConcepts: List[str] = Field(default_factory=list, description="Concepts missing or inadequately addressed")
     reasoning: str = Field(default="", description="Explainable rationale for the score and concept attribution")
     confidence: float = Field(default=0.85, ge=0.0, le=1.0, description="Evaluator confidence in scoring")
+    technicalCorrectness: str = Field(default="adequate", description="Evaluation of technical correctness: accurate | partially_accurate | inaccurate")
+    completeness: str = Field(default="adequate", description="Evaluation of completeness: complete | partial | minimal")
+    relevance: str = Field(default="relevant", description="Evaluation of relevance: directly_relevant | partially_relevant | off_topic")
+    depth: str = Field(default="adequate", description="Evaluation of technical depth: deep | adequate | shallow")
+    isFallback: bool = Field(default=False, description="Flag indicating if deterministic fallback was used instead of primary LLM")
 
     # --- Additive explainability fields (optional; default-safe) -------------
     subScores: Optional[AnswerSubScores] = Field(default=None, description="Section 7.2 component scores behind the total")

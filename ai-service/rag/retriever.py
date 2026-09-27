@@ -63,7 +63,7 @@ class KnowledgeRetriever:
         self.corpus_texts = []
         for c in self.chunks:
             doc_text = (
-                f"{c.title}. "
+                f"{c.title}. Domain: {getattr(c, 'domain', 'cyber_computing')}. "
                 f"Role: {c.role_id}. Competency: {c.competency}. Stage: {c.stage}. Difficulty: {c.difficulty_level}. "
                 f"{c.content} "
                 f"Key concepts: {' '.join(c.expected_concepts)}. "
@@ -84,8 +84,12 @@ class KnowledgeRetriever:
         if self.use_embeddings:
             try:
                 from sentence_transformers import SentenceTransformer
-                # Load cached local model
-                self.embed_model = SentenceTransformer("all-MiniLM-L6-v2", local_files_only=True)
+                # Try cached local model first, fallback to standard load if not locally cached
+                try:
+                    self.embed_model = SentenceTransformer("all-MiniLM-L6-v2", local_files_only=True)
+                except Exception:
+                    self.embed_model = SentenceTransformer("all-MiniLM-L6-v2", local_files_only=False)
+
                 # Compute and normalize dense chunk embeddings
                 self.dense_embeddings = self.embed_model.encode(
                     self.corpus_texts,
@@ -97,6 +101,37 @@ class KnowledgeRetriever:
             except Exception as e:
                 logger.warning(f"Dense embedding initialization skipped or failed: {e}. Defaulting to lexical fallback.")
                 self.dense_available = False
+        else:
+            self.dense_available = False
+
+        # Loud Startup Diagnostic
+        status_banner = self.get_status_banner()
+        logger.info("\n" + status_banner)
+
+    def get_status_banner(self) -> str:
+        """Returns the formatted, loud RAG status diagnostic banner."""
+        mode_str = "DENSE" if self.dense_embeddings_active else "TF-IDF FALLBACK"
+        dense_str = "ACTIVE" if self.dense_embeddings_active else "INACTIVE"
+        model_str = "all-MiniLM-L6-v2" if self.dense_embeddings_active else "unavailable"
+        return (
+            "========================================\n"
+            "RAG STATUS\n"
+            f"Embedding model: {model_str}\n"
+            f"Mode: {mode_str}\n"
+            f"Dense retrieval: {dense_str}\n"
+            f"KB chunks: {len(self.chunks)}\n"
+            "========================================"
+        )
+
+    def get_status_dict(self) -> Dict[str, Any]:
+        """Returns structured diagnostic status dictionary."""
+        return {
+            "embedding_model": "all-MiniLM-L6-v2" if self.dense_embeddings_active else "unavailable",
+            "retrieval_mode": self.retrieval_mode,
+            "mode_display": "DENSE" if self.dense_embeddings_active else "TF-IDF FALLBACK",
+            "dense_embeddings_active": self.dense_embeddings_active,
+            "kb_chunks": len(self.chunks)
+        }
 
     @property
     def dense_embeddings_active(self) -> bool:
@@ -116,25 +151,45 @@ class KnowledgeRetriever:
         stage: Optional[str] = None,
         difficulty: Optional[int] = None,
         top_k: int = 3,
-        force_fallback: bool = False
+        force_fallback: bool = False,
+        domain: Optional[str] = None,
+        prohibited_domains: Optional[List[str]] = None
     ) -> RetrievalResponse:
         """
         Executes query retrieval:
-        1. Metadata pre-filtering with automatic relaxation if constraints are too restrictive
+        1. Strict domain boundary resolution and metadata pre-filtering with domain-confined relaxation
         2. Semantic similarity scoring (Dense embeddings primary, TF-IDF fallback)
         3. Cosine similarity ranking + difficulty/stage proximity adjustments
-        4. Ranked top-k results with full metadata, expected concepts, and rubrics
+        4. Ranked top-k results with full metadata, domain tags, expected concepts, and rubrics
         """
         if not self.chunks:
             return RetrievalResponse(query=query, total_found=0, results=[])
 
-        # Step 1: Metadata Pre-Filtering
+        # Step 0: Resolve domain boundary
+        resolved_domain = domain
+        if not resolved_domain:
+            if role_id and any(token in role_id.lower() for token in ("ece", "radar", "drdo", "scientist")):
+                resolved_domain = "electronics_radar"
+            elif role_id and any(token in role_id.lower() for token in ("backend", "fullstack", "software", "sde")):
+                resolved_domain = "cyber_computing"
+            elif competency and competency in ("embedded_realtime_systems", "digital_signal_processing", "radar_rf_systems", "avionics_communication"):
+                resolved_domain = "electronics_radar"
+            elif competency and competency in ("backend", "database", "system_design", "cs_fundamentals"):
+                resolved_domain = "cyber_computing"
+
+        # Step 1: Metadata Pre-Filtering within strict domain boundary
         candidate_indices, was_relaxed = self._filter_with_relaxation(
             role_id=role_id,
             competency=competency,
             stage=stage,
-            difficulty=difficulty
+            difficulty=difficulty,
+            domain=resolved_domain,
+            prohibited_domains=prohibited_domains
         )
+
+        if not candidate_indices:
+            # Explicit no-grounded-context condition: strictly prevent cross-domain contamination
+            return RetrievalResponse(query=query, total_found=0, results=[])
 
         query_clean = query.strip()
         if not query_clean:
@@ -162,7 +217,10 @@ class KnowledgeRetriever:
                 content=c.content,
                 expected_concepts=c.expected_concepts,
                 rubric=c.rubric,
-                source=c.source
+                source=c.source,
+                domain=getattr(c, "domain", "cyber_computing"),
+                source_title=getattr(c, "source_title", None),
+                source_reference=getattr(c, "source_reference", None)
             ))
 
         return RetrievalResponse(
@@ -231,42 +289,68 @@ class KnowledgeRetriever:
         role_id: Optional[str],
         competency: Optional[str],
         stage: Optional[str],
-        difficulty: Optional[int]
+        difficulty: Optional[int],
+        domain: Optional[str] = None,
+        prohibited_domains: Optional[List[str]] = None
     ) -> Tuple[List[int], bool]:
-        """Filters indices, progressively relaxing constraints to guarantee candidates are found."""
+        """
+        Filters indices with domain boundary isolation.
+        Progressively relaxes constraints (difficulty -> stage -> competency -> role)
+        strictly INSIDE the target domain. Never contaminates cross-domain.
+        """
         # 1. Exact match across all supplied metadata
-        exact = self._filter_indices(role_id, competency, stage, difficulty)
+        exact = self._filter_indices(role_id, competency, stage, difficulty, domain, prohibited_domains)
         if exact:
             return exact, False
 
         # 2. Relax difficulty (match role, competency, stage)
-        rel_diff = self._filter_indices(role_id, competency, stage, None)
+        rel_diff = self._filter_indices(role_id, competency, stage, None, domain, prohibited_domains)
         if rel_diff:
             return rel_diff, True
 
         # 3. Relax stage (match role, competency)
-        rel_stage = self._filter_indices(role_id, competency, None, None)
+        rel_stage = self._filter_indices(role_id, competency, None, None, domain, prohibited_domains)
         if rel_stage:
             return rel_stage, True
 
         # 4. Relax competency (match role)
-        rel_role = self._filter_indices(role_id, None, None, None)
+        rel_role = self._filter_indices(role_id, None, None, None, domain, prohibited_domains)
         if rel_role:
             return rel_role, True
 
-        # 5. Return all available chunks
-        return list(range(len(self.chunks))), True
+        # 5. Domain-only relaxation (if domain specified, stay strictly within domain)
+        if domain:
+            rel_domain = self._filter_indices(None, None, None, None, domain, prohibited_domains)
+            if rel_domain:
+                return rel_domain, True
+            return [], True
+
+        # 6. Global fallback only if NO domain constraint exists
+        allowed_all = []
+        for i, c in enumerate(self.chunks):
+            c_domain = getattr(c, "domain", "cyber_computing")
+            if prohibited_domains and c_domain in prohibited_domains:
+                continue
+            allowed_all.append(i)
+        return allowed_all, True
 
     def _filter_indices(
         self,
         role_id: Optional[str],
         competency: Optional[str],
         stage: Optional[str],
-        difficulty: Optional[int]
+        difficulty: Optional[int],
+        domain: Optional[str] = None,
+        prohibited_domains: Optional[List[str]] = None
     ) -> List[int]:
-        """Applies strict metadata matching."""
+        """Applies strict metadata and domain boundary matching."""
         matches = []
         for i, c in enumerate(self.chunks):
+            c_domain = getattr(c, "domain", "cyber_computing")
+            if prohibited_domains and c_domain in prohibited_domains:
+                continue
+            if domain and c_domain != domain:
+                continue
             if role_id and c.role_id != role_id:
                 continue
             if competency:
