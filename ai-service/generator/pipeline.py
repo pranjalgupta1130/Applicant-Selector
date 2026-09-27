@@ -95,14 +95,15 @@ class QuestionGeneratorPipeline:
             query_terms.extend(previous_missing_concepts)
         query = " ".join(query_terms)
 
-        # 2. Retrieve Grounded Context
+        # 2. Retrieve Grounded Context within strict domain boundary
         retrieval_res = self.retriever.retrieve(
             query=query,
             role_id=role.id,
             competency=competency,
             stage=stage,
             difficulty=difficulty,
-            top_k=2
+            top_k=2,
+            domain=getattr(role, "domain", None)
         )
         retrieved_chunks = retrieval_res.results
 
@@ -343,9 +344,13 @@ Respond with valid JSON according to the schema."""
             if selected_question_text:
                 break
 
-        # If all retrieved questions were already asked, pick from any chunk in this competency
+        # If all retrieved questions were already asked, pick from any chunk in this competency and domain
+        target_domain = getattr(role, "domain", None)
         if not selected_question_text:
             for c in self.retriever.chunks:
+                c_domain = getattr(c, "domain", None)
+                if target_domain and c_domain and c_domain != target_domain:
+                    continue
                 if c.competency == competency:
                     for q in c.sample_questions:
                         if not self._is_duplicate(q, previous_questions):
@@ -360,7 +365,10 @@ Respond with valid JSON according to the schema."""
                                 content=c.content,
                                 expected_concepts=c.expected_concepts,
                                 rubric=c.rubric,
-                                source=c.source
+                                source=c.source,
+                                domain=getattr(c, "domain", "cyber_computing"),
+                                source_title=getattr(c, "source_title", None),
+                                source_reference=getattr(c, "source_reference", None)
                             )
                             break
                 if selected_question_text:

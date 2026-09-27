@@ -218,7 +218,7 @@ class ScorecardEngine:
         concept_evidence_map: Dict[str, Any]
     ) -> RoleAlignmentAnalysis:
         """Compares stated role requirements against candidate demonstrated evidence."""
-        reqs = role.required_skills or ["Python", "SQL", "REST APIs", "System Design"]
+        reqs = getattr(role, "technical_requirements", None) or role.required_skills or ["Python", "SQL", "REST APIs", "System Design"]
         
         demonstrated_reqs: List[str] = []
         partial_reqs: List[str] = []
@@ -409,7 +409,10 @@ class ScorecardEngine:
         # Technical turns summary
         tech_turns = [
             t for t in turns
-            if t.get("competency") in ("backend", "database", "system_design", "cs_fundamentals")
+            if t.get("competency") in (
+                "backend", "database", "system_design", "cs_fundamentals",
+                "embedded_realtime_systems", "digital_signal_processing", "radar_rf_systems", "avionics_communication"
+            )
         ]
         if tech_turns:
             avg_tech = sum(t["score"] for t in tech_turns) / len(tech_turns)
@@ -423,7 +426,8 @@ class ScorecardEngine:
         # Managerial / Scenario turns summary
         man_turns = [
             t for t in turns
-            if t.get("stage") == "scenario_managerial" or t.get("competency") == "scenario_managerial"
+            if t.get("stage") in ("scenario_managerial", "techno_managerial")
+            or t.get("competency") in ("scenario_managerial", "techno_managerial")
         ]
         if man_turns:
             avg_man = sum(t["score"] for t in man_turns) / len(man_turns)

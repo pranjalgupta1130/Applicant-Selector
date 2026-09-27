@@ -180,17 +180,44 @@ class AdaptiveInterviewPolicy:
         else:
             diff_reason = "Initial difficulty set for interview opening."
 
-        # Rule 6: Stage & Competency Progression
+        # Rule 6: Stage & Competency Progression (Domain-Aware Ladder)
+        is_drdo = (
+            any(k in state.role_id.lower() for k in ("ece", "radar", "drdo", "scientist")) or
+            state.current_competency in ("embedded_realtime_systems", "digital_signal_processing", "radar_rf_systems", "avionics_communication", "techno_managerial")
+        )
+        if is_drdo:
+            active_ladder = [
+                "ice_breaker",
+                "expertise_validation",
+                "fundamentals",
+                "role_technical",
+                "deep_dive",
+                "application_scenario",
+                "techno_managerial"
+            ]
+            active_quotas = {
+                "ice_breaker": 1,
+                "expertise_validation": 1,
+                "fundamentals": 1,
+                "role_technical": 1,
+                "deep_dive": 1,
+                "application_scenario": 1,
+                "techno_managerial": 1
+            }
+        else:
+            active_ladder = STAGE_LADDER
+            active_quotas = STAGE_QUESTION_QUOTAS
+
         stage_count = state.stage_question_counts.get(current_stage, 0)
-        stage_quota = STAGE_QUESTION_QUOTAS.get(current_stage, 1)
+        stage_quota = active_quotas.get(current_stage, 1)
 
         try:
-            curr_stage_idx = STAGE_LADDER.index(current_stage)
+            curr_stage_idx = active_ladder.index(current_stage)
         except ValueError:
             curr_stage_idx = 0
 
         # Check if all stages in ladder have completed their quota
-        if curr_stage_idx >= len(STAGE_LADDER) - 1 and stage_count >= stage_quota:
+        if curr_stage_idx >= len(active_ladder) - 1 and stage_count >= stage_quota:
             return PolicyDecision(
                 next_stage="closing",
                 next_competency=current_comp,
@@ -203,22 +230,38 @@ class AdaptiveInterviewPolicy:
             )
 
         # Check if stage quota is fulfilled
-        if stage_count >= stage_quota and curr_stage_idx < len(STAGE_LADDER) - 1:
+        if stage_count >= stage_quota and curr_stage_idx < len(active_ladder) - 1:
             next_stage_idx = curr_stage_idx + 1
-            next_stage = STAGE_LADDER[next_stage_idx]
+            next_stage = active_ladder[next_stage_idx]
             strategy = "progress_stage"
 
-            # Transition competency naturally to match stage
-            if next_stage == "fundamentals":
-                next_comp = "cs_fundamentals"
-            elif next_stage == "role_technical":
-                next_comp = "backend"
-            elif next_stage == "deep_dive":
-                next_comp = "database" if "database" not in state.competency_scores else "system_design"
-            elif next_stage == "scenario_managerial":
-                next_comp = "scenario_managerial"
+            if is_drdo:
+                if next_stage == "expertise_validation":
+                    next_comp = "embedded_realtime_systems"
+                elif next_stage == "fundamentals":
+                    next_comp = "digital_signal_processing"
+                elif next_stage == "role_technical":
+                    next_comp = "radar_rf_systems"
+                elif next_stage == "deep_dive":
+                    next_comp = "embedded_realtime_systems" if "embedded_realtime_systems" not in state.competency_scores else "radar_rf_systems"
+                elif next_stage == "application_scenario":
+                    next_comp = "avionics_communication"
+                elif next_stage == "techno_managerial":
+                    next_comp = "techno_managerial"
+                else:
+                    next_comp = current_comp
             else:
-                next_comp = current_comp
+                # Transition competency naturally to match stage for standard track
+                if next_stage == "fundamentals":
+                    next_comp = "cs_fundamentals"
+                elif next_stage == "role_technical":
+                    next_comp = "backend"
+                elif next_stage == "deep_dive":
+                    next_comp = "database" if "database" not in state.competency_scores else "system_design"
+                elif next_stage == "scenario_managerial":
+                    next_comp = "scenario_managerial"
+                else:
+                    next_comp = current_comp
 
             rationale = f"Stage '{current_stage}' quota met ({stage_count} questions). Progressing to stage '{next_stage}'. {diff_reason}"
             adaptive_reason = f"Advancing interview progression to {next_stage}."
@@ -227,13 +270,18 @@ class AdaptiveInterviewPolicy:
             next_stage = current_stage
             strategy = "pivot_competency" if stage_count > 0 else "progress_stage"
 
-
             if current_stage == "role_technical" and stage_count == 1:
-                next_comp = "database" if current_comp != "database" else "backend"
+                if is_drdo:
+                    next_comp = "embedded_realtime_systems" if current_comp != "embedded_realtime_systems" else "radar_rf_systems"
+                else:
+                    next_comp = "database" if current_comp != "database" else "backend"
                 rationale = f"Broadening technical coverage: pivoting from '{current_comp}' to '{next_comp}'. {diff_reason}"
                 adaptive_reason = f"Pivoting technical competency to {next_comp}."
             elif current_stage == "deep_dive" and stage_count == 1:
-                next_comp = "system_design" if current_comp != "system_design" else "backend"
+                if is_drdo:
+                    next_comp = "digital_signal_processing" if current_comp != "digital_signal_processing" else "radar_rf_systems"
+                else:
+                    next_comp = "system_design" if current_comp != "system_design" else "backend"
                 rationale = f"Deepening architectural evaluation: pivoting from '{current_comp}' to '{next_comp}'. {diff_reason}"
                 adaptive_reason = f"Pivoting deep dive competency to {next_comp}."
             else:
@@ -261,10 +309,14 @@ class AdaptiveInterviewPolicy:
         """Selects a question type appropriate to the stage while rotating away from last type."""
         stage_preferred_types = {
             "ice_breaker": ["conceptual"],
+            "expertise_validation": ["conceptual", "debugging"],
             "fundamentals": ["conceptual", "trade_off"],
             "role_technical": ["implementation", "design", "debugging", "trade_off"],
             "deep_dive": ["trade_off", "design", "debugging", "follow_up"],
-            "scenario_managerial": ["scenario", "debugging"]
+            "application_scenario": ["scenario", "design"],
+            "system_engineering_design": ["design", "trade_off"],
+            "scenario_managerial": ["scenario", "debugging"],
+            "techno_managerial": ["scenario", "trade_off"]
         }
 
         candidates = stage_preferred_types.get(stage, ["conceptual", "implementation", "scenario"])

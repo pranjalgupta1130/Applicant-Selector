@@ -40,7 +40,9 @@ async def health_check():
         "service": "BoardRoom AI - RAG & Question Generation Subsystem",
         "chunks_indexed": len(_retriever.chunks),
         "retrieval_mode": _retriever.retrieval_mode,
+        "retrieval_mode_display": "DENSE" if _retriever.dense_embeddings_active else "TF-IDF FALLBACK",
         "dense_embeddings_active": _retriever.dense_embeddings_active,
+        "embedding_model": "all-MiniLM-L6-v2" if _retriever.dense_embeddings_active else "unavailable",
         "llm_configured": bool(settings.GEMINI_API_KEY),
         "llm_model": settings.DEFAULT_LLM_MODEL
     }

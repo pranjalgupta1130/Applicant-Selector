@@ -95,7 +95,7 @@ class QuestionRelevanceEvaluator:
             rationale=rationale
         )
 
-    # General software and engineering domain markers
+    # General software, systems, and DRDO scientific/engineering domain markers
     GENERAL_ENGINEERING_MARKERS = {
         "software", "engineer", "code", "programming", "system", "architecture",
         "database", "api", "backend", "frontend", "server", "service", "client",
@@ -105,17 +105,33 @@ class QuestionRelevanceEvaluator:
         "nosql", "http", "rest", "endpoint", "microservice", "pipeline", "schema",
         "query", "index", "b-tree", "throughput", "memory", "thread", "process",
         "socket", "payload", "header", "auth", "token", "jwt", "idempotency",
-        "migration", "incident", "triage", "outage", "replica", "sharding", "raft"
+        "migration", "incident", "triage", "outage", "replica", "sharding", "raft",
+        # DRDO / ECE / Radar / Embedded / Avionics engineering markers
+        "embedded", "rtos", "interrupt", "isr", "timer", "dma", "dsp", "sampling",
+        "nyquist", "fourier", "fft", "filter", "fir", "iir", "radar", "prf", "pri",
+        "doppler", "antenna", "rf", "aesa", "avionics", "mil-std-1553", "1553b",
+        "arinc", "arinc-429", "bus", "fpga", "microcontroller", "adc", "dac",
+        "modulation", "bpsk", "qpsk", "fmeca", "reliability", "mtbf", "telemetry",
+        "sensor", "firmware", "vhdl", "verilog", "oscilloscope", "logic analyzer",
+        "cortex", "arm", "bare-metal", "preemption", "priority inversion", "watchdog",
+        "clutter", "beamforming", "chirp", "pulse compression", "cfar", "do-254", "do-178c"
     }
 
     @classmethod
     def _score_role_alignment(cls, q_lower: str, role: TargetRole) -> Tuple[int, str]:
-        """Checks alignment with role skills and engineering domain."""
+        """Checks alignment with role skills, technical requirements, and engineering domain."""
         target_tokens = set([s.lower() for s in role.required_skills])
         target_tokens.update(["backend", "api", "server", "data", "architecture", "system", "service", "code"])
         if role.description:
             desc_words = [w.lower().strip(".,;:()") for w in role.description.split() if len(w) > 4]
             target_tokens.update(desc_words)
+        if getattr(role, "technical_requirements", None):
+            for req in role.technical_requirements:
+                req_words = [w.lower().strip(".,;:()") for w in req.split() if len(w) > 4]
+                target_tokens.update(req_words)
+        if getattr(role, "title", None):
+            title_words = [w.lower().strip(".,;:()") for w in role.title.split() if len(w) > 3]
+            target_tokens.update(title_words)
 
         matches = [kw for kw in target_tokens if kw in q_lower]
         eng_matches = [marker for marker in cls.GENERAL_ENGINEERING_MARKERS if marker in q_lower]
@@ -134,8 +150,14 @@ class QuestionRelevanceEvaluator:
 
     @classmethod
     def _score_candidate_alignment(cls, q_lower: str, candidate: CandidateProfile, difficulty: int) -> Tuple[int, str]:
-        """Checks alignment between question, candidate skills, and experience."""
+        """Checks alignment between question, candidate skills, claimed expertise, and experience."""
         cand_skills = [s.lower() for s in candidate.skills]
+        if getattr(candidate, "claimed_expertise", None):
+            for claim in candidate.claimed_expertise:
+                cand_skills.append(claim.lower())
+                cand_skills.extend([w.lower().strip(".,;:()") for w in claim.split() if len(w) > 4])
+        if getattr(candidate, "specialization", None) and candidate.specialization:
+            cand_skills.extend([w.lower().strip(".,;:()") for w in candidate.specialization.split() if len(w) > 4])
         matched_skills = [s for s in cand_skills if s in q_lower]
         has_eng_marker = any(marker in q_lower for marker in cls.GENERAL_ENGINEERING_MARKERS)
 

@@ -60,6 +60,54 @@ COMPETENCY_CORE_CONCEPTS: Dict[str, List[str]] = {
         "software architecture overview",
         "recent technical project",
         "core engineering strengths"
+    ],
+    # ---------------------------------------------------------
+    # DRDO / RAC Scientific & Engineering Demonstration Domain
+    # ---------------------------------------------------------
+    "embedded_realtime_systems": [
+        "Interrupt Latency & ISRs",
+        "RTOS Priority Preemption",
+        "Priority Inversion & Ceiling Protocol",
+        "Watchdog Timers",
+        "DMA Scatter-Gather",
+        "Bare-Metal vs RTOS"
+    ],
+    "digital_signal_processing": [
+        "Nyquist-Shannon Sampling Theorem",
+        "Discrete Fourier Transform / FFT",
+        "FIR vs IIR Digital Filters",
+        "Fixed-Point Quantization",
+        "Digital Pulse Compression",
+        "Adaptive Beamforming"
+    ],
+    "radar_rf_systems": [
+        "Radar Range Equation",
+        "Pulse Repetition Frequency (PRF)",
+        "Doppler Frequency Shift",
+        "FMCW Radar Principles",
+        "AESA Beamforming",
+        "Receiver Dynamic Range"
+    ],
+    "avionics_communication": [
+        "MIL-STD-1553B Dual-Redundant Bus",
+        "ARINC-429 Serial Protocol",
+        "Phase Locked Loops (PLL)",
+        "Digital Modulation BPSK/QPSK",
+        "EMI/EMC Shielding",
+        "Triple Modular Redundancy"
+    ],
+    "techno_managerial": [
+        "FMECA Risk Mitigation",
+        "DO-254 / DO-178C Guidelines",
+        "MTBF Reliability Prediction",
+        "Obsolescence Management",
+        "Multi-Disciplinary Engineering Leadership"
+    ],
+    "expertise_validation": [
+        "claim verification",
+        "hands-on project implementation",
+        "design constraint trade-offs",
+        "individual technical ownership"
     ]
 }
 
@@ -93,7 +141,36 @@ _BASE_COMPETENCY_KEYWORDS: Dict[str, List[str]] = {
     ],
     "ice_breaker": [
         "background", "project", "experience", "journey", "role", "introduction",
-        "interest", "learning", "tech stack", "tools", "challenge"
+        "interest", "learning", "tech stack", "tools", "challenge", "specialization"
+    ],
+    "embedded_realtime_systems": [
+        "interrupt", "latency", "isr", "rtos", "freertos", "preemption", "priority",
+        "inversion", "ceiling", "mutex", "semaphore", "watchdog", "timer", "dma",
+        "scatter-gather", "bare-metal", "microcontroller", "arm", "cortex", "jitter"
+    ],
+    "digital_signal_processing": [
+        "dsp", "nyquist", "sampling", "aliasing", "fourier", "dft", "fft", "fir",
+        "iir", "filter", "quantization", "fixed-point", "floating-point", "pulse compression",
+        "chirp", "beamforming", "spectral", "frequency", "bandwidth", "decimation"
+    ],
+    "radar_rf_systems": [
+        "radar", "range equation", "prf", "pri", "doppler", "velocity", "fmcw",
+        "chirp", "aesa", "phased array", "dynamic range", "noise figure", "rcs",
+        "cross section", "receiver", "transmitter", "antenna", "clutter", "mti"
+    ],
+    "avionics_communication": [
+        "avionics", "mil-std-1553", "1553b", "arinc-429", "arinc", "bus controller",
+        "remote terminal", "pll", "modulation", "bpsk", "qpsk", "emi", "emc",
+        "shielding", "triple modular redundancy", "tmr", "fault tolerance", "telemetry"
+    ],
+    "techno_managerial": [
+        "fmeca", "fmea", "risk", "mitigation", "do-254", "do-178c", "safety-critical",
+        "mtbf", "reliability", "lifecycle", "obsolescence", "qualification",
+        "multidisciplinary", "prioritization", "traceability", "system engineering"
+    ],
+    "expertise_validation": [
+        "claimed", "project", "hands-on", "implementation", "ownership",
+        "architecture", "hardware", "firmware", "schematic", "validation"
     ]
 }
 

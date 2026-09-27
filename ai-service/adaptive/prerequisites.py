@@ -18,7 +18,16 @@ CONCEPT_PREREQUISITE_GRAPH: Dict[str, List[str]] = {
     "distributed transactions": ["database transactions"],
     "two-phase commit": ["distributed transactions"],
     "distributed locking": ["mutex synchronization"],
-    "concurrency race conditions": ["threads vs processes"]
+    "concurrency race conditions": ["threads vs processes"],
+    # DRDO / RAC Scientific Concept Prerequisite Dependencies
+    "Priority Inversion & Ceiling Protocol": ["RTOS Priority Preemption"],
+    "DMA Scatter-Gather": ["Interrupt Latency & ISRs"],
+    "Digital Pulse Compression": ["Nyquist-Shannon Sampling Theorem", "Discrete Fourier Transform / FFT"],
+    "Adaptive Beamforming": ["Discrete Fourier Transform / FFT", "FIR vs IIR Digital Filters"],
+    "AESA Beamforming": ["Radar Range Equation", "Doppler Frequency Shift"],
+    "FMCW Radar Principles": ["Radar Range Equation"],
+    "DO-254 / DO-178C Guidelines": ["FMECA Risk Mitigation"],
+    "Triple Modular Redundancy": ["MIL-STD-1553B Dual-Redundant Bus"]
 }
 
 
