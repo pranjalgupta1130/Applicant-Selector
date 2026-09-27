@@ -13,6 +13,9 @@ env/
 venv/
 .venv/
 ENV/
+ai-service/.runtime-deps/
+backend/.npm-cache/
+boardroom-ai/.npm-cache/
 
 # Testing & Cache
 .pytest_cache/

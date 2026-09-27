@@ -78,6 +78,10 @@ class ScorecardEngine:
             overall_score = int(round(weighted_score_sum / total_active_weight))
             mean_comp_conf = weighted_conf_sum / total_active_weight
             overall_confidence = round(0.50 * mean_comp_conf + 0.50 * session_evidence_coverage, 2)
+        elif state.turns:
+            turn_scores = [getattr(t, "score", t.get("score") if isinstance(t, dict) else 0) for t in state.turns]
+            overall_score = int(round(sum(turn_scores) / len(turn_scores))) if turn_scores else 0
+            overall_confidence = round(max(0.50, session_evidence_coverage), 2)
         else:
             overall_score = 0
             overall_confidence = 0.0
@@ -409,10 +413,8 @@ class ScorecardEngine:
         # Technical turns summary
         tech_turns = [
             t for t in turns
-            if t.get("competency") in (
-                "backend", "database", "system_design", "cs_fundamentals",
-                "embedded_realtime_systems", "digital_signal_processing", "radar_rf_systems", "avionics_communication"
-            )
+            if t.get("stage") in ("applicant_validation", "core_technical", "deep_dive", "application_scenario", "system_engineering")
+            or t.get("competency") not in ("techno_managerial", "ice_breaker")
         ]
         if tech_turns:
             avg_tech = sum(t["score"] for t in tech_turns) / len(tech_turns)

@@ -275,17 +275,21 @@ Respond with valid JSON according to the schema."""
 # ============================================================================
 
 def _apply_guards(
-    subs: Dict[str, int],
+    subs: Dict[str, Optional[int]],
     answer: str,
     llm: Optional[LLMSubScores],
     has_concepts: bool,
+    stage: str = "core_technical"
 ) -> tuple[float, List[str]]:
     """
-    Deterministic guardrails applied AFTER the weighted sum. Each exists because
-    a plain weighted average gives an obviously wrong number in that case -- and
-    because a judge will ask about exactly these.
+    Deterministic guardrails applied AFTER the stage-weighted sum.
     """
-    total = sum(subs[k] * w for k, w in WEIGHTS.items())
+    valid_pairs = [(k, v) for k, v in subs.items() if v is not None]
+    if valid_pairs:
+        total = sum(v for _, v in valid_pairs) / len(valid_pairs)
+    else:
+        total = 50.0
+
     flags: List[str] = []
 
     if not has_concepts:
@@ -296,9 +300,8 @@ def _apply_guards(
         total = min(total, 25.0)
         flags.append("refusal")
 
-    # Off-topic cannot pass on style points. Needs a concept list: without one,
-    # low relevance may only mean different wording.
-    if has_concepts and subs["relevance"] <= OFF_TOPIC_RELEVANCE:
+    rel_val = subs.get("relevance") or subs.get("background_alignment") or 50
+    if has_concepts and rel_val <= OFF_TOPIC_RELEVANCE:
         total = min(total, 30.0)
         flags.append("off_topic")
 
@@ -306,13 +309,12 @@ def _apply_guards(
         total = min(total, 35.0)
         flags.append("insufficient_length")
 
-    # THE IMPORTANT ONE. Without this a fluent wrong answer scores well on
-    # relevance, reasoning and clarity and lands in the mid-60s.
-    if llm is not None and llm.factuallyIncorrect:
+    if llm is not None and llm.factuallyIncorrect and stage not in ("ice_breaker", "techno_managerial"):
         total *= INCORRECTNESS_PENALTY
         flags.append("factually_incorrect")
 
-    if has_concepts and subs["completeness"] == 0 and subs["relevance"] < 60:
+    comp_val = subs.get("completeness") or subs.get("experience_evidence") or 0
+    if has_concepts and comp_val == 0 and rel_val < 60:
         total = min(total, 25.0)
         flags.append("no_concept_coverage")
 
@@ -338,7 +340,7 @@ def _strategy_hint(
 
 
 def _deterministic_reasoning(
-    matches: List[ConceptMatch], subs: Dict[str, int], flags: List[str]
+    matches: List[ConceptMatch], subs: Dict[str, Optional[int]], flags: List[str]
 ) -> str:
     covered = [m.concept for m in matches if m.covered]
     missing = [m.concept for m in matches if not m.covered and not m.partial]
@@ -355,8 +357,10 @@ def _deterministic_reasoning(
         parts.append("None of the expected concepts were clearly addressed.")
     if missing:
         parts.append("Not addressed: " + ", ".join(missing[:4]) + ".")
+
+    rel_score = subs.get("relevance") or subs.get("background_alignment") or 50
     parts.append(
-        f"Relevance {subs['relevance']}/100, concept coverage {subs['completeness']}/100."
+        f"Relevance {rel_score}/100."
     )
     return " ".join(parts)
 
@@ -370,15 +374,6 @@ def score_answer(
 ) -> Dict[str, Any]:
     """
     Score one answer. Never raises; always returns a complete result dict.
-
-    Args:
-        question: the QuestionObject the candidate answered.
-        answer:   raw candidate response text.
-        use_llm:  False forces the deterministic path -- used by the test suite
-                  for reproducibility, and available as a demo-safety switch.
-
-    Returns a dict with subScores, total, concept breakdown, reasoning,
-    strategyHint, confidence, scoreBreakdown, flags and mode.
     """
     text = (answer or "").strip()
     matches = match_concepts(text, question.expectedConcepts or [])
@@ -395,23 +390,73 @@ def score_answer(
         mode, confidence = "llm_assisted", llm.confidence
         reasoning = llm.feedback or ""
     else:
-        # Deterministic stand-ins. Correctness is proxied by coverage: we can
-        # verify expected concepts are PRESENT, not that claims are TRUE.
-        # An honest limitation -- documented, not papered over.
         technical = int(round(0.75 * completeness + 0.25 * relevance))
         reasoning_s = int(round(0.5 * (relevance + completeness) * 0.85))
         clarity = score_clarity_deterministic(text)
         mode, confidence, reasoning = "deterministic", 0.45, ""
 
-    subs = {
-        "relevance": relevance,
-        "technicalCorrectness": technical,
-        "completeness": completeness,
-        "reasoning": reasoning_s,
-        "clarity": clarity,
-    }
+    stg = (question.stage or "core_technical").lower().strip()
 
-    total, flags = _apply_guards(subs, text, llm, has_concepts=bool(matches))
+    if stg == "ice_breaker":
+        subs = {
+            "relevance": relevance,
+            "background_alignment": relevance,
+            "communication": clarity,
+            "completeness": completeness,
+            "technicalCorrectness": None
+        }
+    elif stg in ("applicant_validation", "expertise_validation"):
+        subs = {
+            "relevance": relevance,
+            "experience_evidence": completeness,
+            "specificity": clarity,
+            "completeness": completeness,
+            "technicalCorrectness": technical if question.expectedConcepts else None
+        }
+    elif stg == "deep_dive":
+        subs = {
+            "technicalCorrectness": technical,
+            "reasoning": reasoning_s,
+            "assumptions": completeness,
+            "trade_offs": relevance,
+            "depth": clarity
+        }
+    elif stg in ("application_scenario", "scenario"):
+        subs = {
+            "technicalCorrectness": technical,
+            "problem_solving": reasoning_s,
+            "reasoning": reasoning_s,
+            "trade_offs": relevance,
+            "practical_applicability": completeness
+        }
+    elif stg in ("system_engineering", "system_engineering_design"):
+        subs = {
+            "architecture": reasoning_s,
+            "system_reasoning": technical,
+            "interfaces": completeness,
+            "trade_offs": relevance,
+            "reliability": clarity,
+            "technicalCorrectness": technical
+        }
+    elif stg in ("techno_managerial", "scenario_managerial"):
+        subs = {
+            "prioritization": reasoning_s,
+            "leadership": relevance,
+            "communication": clarity,
+            "decision_making": completeness,
+            "risk_management": technical,
+            "technicalCorrectness": None
+        }
+    else: # core_technical
+        subs = {
+            "technicalCorrectness": technical,
+            "completeness": completeness,
+            "reasoning": reasoning_s,
+            "depth": clarity,
+            "relevance": relevance
+        }
+
+    total, flags = _apply_guards(subs, text, llm, has_concepts=bool(matches), stage=stg)
 
     if mode == "deterministic":
         flags.append("llm_unavailable_deterministic_scoring")
@@ -435,13 +480,6 @@ def score_answer(
         "strategyHint": _strategy_hint(matches, total, flags),
         "confidence": round(float(confidence), 2),
         "scoreBreakdown": {
-            "weights": dict(WEIGHTS),
-            "weightedContributions": {
-                k: round(subs[k] * w, 2) for k, w in WEIGHTS.items()
-            },
-            "rawWeightedSum": round(
-                sum(subs[k] * w for k, w in WEIGHTS.items()), 2
-            ),
             "guardsApplied": flags,
             "finalTotal": round(total, 2),
             "coverageThreshold": COVERAGE_THRESHOLD,

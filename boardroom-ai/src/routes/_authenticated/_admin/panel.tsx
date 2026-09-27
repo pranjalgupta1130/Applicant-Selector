@@ -301,8 +301,9 @@ type PanelEntry = CandidateReport & {
 };
 
 async function loadInterviews(): Promise<PanelEntry[]> {
-  const { data } = await supabase.from("interviews").select("*").order("created_at", { ascending: false }).limit(100);
-  return (data ?? []).map((iv) => {
+  try {
+    const { data } = await supabase.from("interviews").select("*").order("created_at", { ascending: false }).limit(100);
+    return (data ?? []).map((iv) => {
     const r = (iv.report ?? {}) as Record<string, any>;
     const answers = (iv.answers ?? []) as any[];
     return {
@@ -335,4 +336,8 @@ async function loadInterviews(): Promise<PanelEntry[]> {
       languageSummary: r["languageSummary"],
     };
   });
+  } catch (err) {
+    console.warn("[Panel] Supabase data not accessible in local mode:", err);
+    return [];
+  }
 }

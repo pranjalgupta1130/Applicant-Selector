@@ -27,29 +27,33 @@ class PolicyDecision(BaseModel):
 
 STAGE_LADDER = [
     "ice_breaker",
-    "fundamentals",
-    "role_technical",
+    "applicant_validation",
+    "core_technical",
     "deep_dive",
-    "scenario_managerial"
+    "application_scenario",
+    "system_engineering",
+    "techno_managerial"
 ]
 
 COMPETENCY_LADDER = [
     "ice_breaker",
-    "cs_fundamentals",
-    "backend",
-    "database",
-    "system_design",
-    "scenario_managerial"
+    "applicant_validation",
+    "core_technical",
+    "deep_dive",
+    "application_scenario",
+    "system_engineering",
+    "techno_managerial"
 ]
 
 STAGE_QUESTION_QUOTAS = {
     "ice_breaker": 1,
-    "fundamentals": 1,
-    "role_technical": 2,
+    "applicant_validation": 1,
+    "core_technical": 1,
     "deep_dive": 1,
-    "scenario_managerial": 1
+    "application_scenario": 1,
+    "system_engineering": 1,
+    "techno_managerial": 1
 }
-
 
 
 class AdaptiveInterviewPolicy:
@@ -60,7 +64,7 @@ class AdaptiveInterviewPolicy:
     """
 
     @classmethod
-    def evaluate_next_step(cls, state: InterviewState) -> PolicyDecision:
+    def evaluate_next_step(cls, state: InterviewState, candidate_skills: Optional[List[str]] = None) -> PolicyDecision:
         total_questions = len(state.previous_questions)
         last_score = state.score_history[-1] if state.score_history else None
         current_diff = state.difficulty
@@ -80,28 +84,45 @@ class AdaptiveInterviewPolicy:
                 adaptive_reason="Conclude interview session at maximum safety cap."
             )
 
+        active_ladder = STAGE_LADDER
+        active_quotas = STAGE_QUESTION_QUOTAS
 
-        # Rule 2: Persistent Weakness Remediation
-        # If candidate has persistent weaknesses that remain unresolved
+        stage_count = state.stage_question_counts.get(current_stage, 0)
+        stage_quota = active_quotas.get(current_stage, 1)
+
+        try:
+            curr_stage_idx = active_ladder.index(current_stage)
+        except ValueError:
+            curr_stage_idx = 0
+
+        # Determine if stage quota is fulfilled and resolve next stage
+        quota_fulfilled = (stage_count >= stage_quota)
+        if quota_fulfilled and curr_stage_idx < len(active_ladder) - 1:
+            effective_next_stage = active_ladder[curr_stage_idx + 1]
+        elif curr_stage_idx >= len(active_ladder) - 1 and quota_fulfilled:
+            effective_next_stage = "closing"
+        else:
+            effective_next_stage = current_stage
+
+        # Rule 2: Persistent Weakness Remediation (Respect stage progression)
         unresolved_pw = [w for w in state.persistent_weaknesses if w not in state.demonstrated_concepts]
-        if unresolved_pw:
+        if unresolved_pw and current_stage != "ice_breaker":
             target_pw = unresolved_pw[0]
             next_diff = max(1, current_diff - 1)
             return PolicyDecision(
-                next_stage=current_stage,
+                next_stage=effective_next_stage,
                 next_competency=current_comp,
                 next_difficulty=next_diff,
                 strategy="remediate_persistent_weakness",
                 recommended_question_type="debugging",
                 target_concepts=[target_pw],
-                rationale=f"Candidate exhibited persistent weakness on '{target_pw}' across multiple turns. De-escalating difficulty to {next_diff}/5 to diagnose and remediate core misunderstanding.",
+                rationale=f"Candidate exhibited persistent weakness on '{target_pw}' across multiple turns. Adjusting difficulty to {next_diff}/5 in stage '{effective_next_stage}'.",
                 adaptive_reason=f"Remediating persistent weakness on '{target_pw}'."
             )
 
         # Rule 3: Prerequisite Dependency Guard
-        # If candidate exhibits gaps on an advanced concept whose prerequisites are unmet
         unresolved_missing = [m for m in state.missing_concepts if m not in state.demonstrated_concepts]
-        if unresolved_missing:
+        if unresolved_missing and current_stage != "ice_breaker":
             target_gap = unresolved_missing[0]
             prereqs_met, unmet_prereqs = ConceptPrerequisiteEngine.check_prerequisites_met(
                 target_gap,
@@ -112,36 +133,34 @@ class AdaptiveInterviewPolicy:
                 target_prereq = unmet_prereqs[0]
                 next_diff = max(1, current_diff - 1)
                 return PolicyDecision(
-                    next_stage=current_stage,
+                    next_stage=effective_next_stage,
                     next_competency=current_comp,
                     next_difficulty=next_diff,
                     strategy="reinforce_prerequisite",
                     recommended_question_type="conceptual",
                     target_concepts=[target_prereq],
-                    rationale=f"Advanced concept '{target_gap}' requires prerequisite '{target_prereq}', which is unverified or missing. Probing foundational prerequisite first before advancing.",
+                    rationale=f"Advanced concept '{target_gap}' requires prerequisite '{target_prereq}'. Probing foundational prerequisite in stage '{effective_next_stage}'.",
                     adaptive_reason=f"Reinforcing prerequisite '{target_prereq}' prior to advanced concept '{target_gap}'."
                 )
 
-        # Rule 4: Immediate Concept Gap Probing
-        # If candidate had a low/partial score (< 68) and has unresolved missing concepts (with prerequisites satisfied)
-        if last_score is not None and last_score < 68 and unresolved_missing:
+        # Rule 4: Immediate Concept Gap Probing (Never trap in ice_breaker)
+        if last_score is not None and last_score < 68 and unresolved_missing and current_stage != "ice_breaker":
             target_gap = unresolved_missing[0]
-            # De-escalate difficulty if candidate struggled (< 50), performance is declining, or exhibits repeated weakness
             if last_score < 50 or state.rolling_score_trend == "declining" or state.has_consecutive_weak():
                 next_diff = max(1, current_diff - 1)
-                diff_note = f"reducing difficulty to {next_diff}/5 due to repeated weak performance"
+                diff_note = f"reducing difficulty to {next_diff}/5 due to weak performance"
             else:
                 next_diff = current_diff
                 diff_note = f"maintaining difficulty at {next_diff}/5"
 
             return PolicyDecision(
-                next_stage=current_stage,
+                next_stage=effective_next_stage,
                 next_competency=current_comp,
                 next_difficulty=next_diff,
                 strategy="probe_missing_concept",
                 recommended_question_type="follow_up",
                 target_concepts=[target_gap],
-                rationale=f"Candidate answer exhibited gap on '{target_gap}' (score {last_score}/100); probing gap directly, {diff_note}.",
+                rationale=f"Candidate answer exhibited gap on '{target_gap}' (score {last_score}/100); probing gap directly in stage '{effective_next_stage}', {diff_note}.",
                 adaptive_reason=f"Adaptive probe targeting missing concept: '{target_gap}'"
             )
 
@@ -185,28 +204,12 @@ class AdaptiveInterviewPolicy:
             any(k in state.role_id.lower() for k in ("ece", "radar", "drdo", "scientist")) or
             state.current_competency in ("embedded_realtime_systems", "digital_signal_processing", "radar_rf_systems", "avionics_communication", "techno_managerial")
         )
-        if is_drdo:
-            active_ladder = [
-                "ice_breaker",
-                "expertise_validation",
-                "fundamentals",
-                "role_technical",
-                "deep_dive",
-                "application_scenario",
-                "techno_managerial"
-            ]
-            active_quotas = {
-                "ice_breaker": 1,
-                "expertise_validation": 1,
-                "fundamentals": 1,
-                "role_technical": 1,
-                "deep_dive": 1,
-                "application_scenario": 1,
-                "techno_managerial": 1
-            }
-        else:
-            active_ladder = STAGE_LADDER
-            active_quotas = STAGE_QUESTION_QUOTAS
+        role_key = state.role_id.lower()
+        role_domain = "aerospace" if any(k in role_key for k in ("aerospace", "aerodynamics", "materials")) else "cyber" if any(k in role_key for k in ("cyber", "security")) else "radar"
+        skill_text = " ".join(candidate_skills or []).lower()
+        radar_expertise = "embedded_realtime_systems" if any(k in skill_text for k in ("embedded", "firmware", "c++", "microcontroller")) else "digital_signal_processing" if any(k in skill_text for k in ("dsp", "signal", "radar", "detection")) else "embedded_realtime_systems"
+        active_ladder = STAGE_LADDER
+        active_quotas = STAGE_QUESTION_QUOTAS
 
         stage_count = state.stage_question_counts.get(current_stage, 0)
         stage_quota = active_quotas.get(current_stage, 1)
@@ -235,33 +238,39 @@ class AdaptiveInterviewPolicy:
             next_stage = active_ladder[next_stage_idx]
             strategy = "progress_stage"
 
-            if is_drdo:
-                if next_stage == "expertise_validation":
-                    next_comp = "embedded_realtime_systems"
-                elif next_stage == "fundamentals":
-                    next_comp = "digital_signal_processing"
-                elif next_stage == "role_technical":
-                    next_comp = "radar_rf_systems"
-                elif next_stage == "deep_dive":
-                    next_comp = "embedded_realtime_systems" if "embedded_realtime_systems" not in state.competency_scores else "radar_rf_systems"
-                elif next_stage == "application_scenario":
-                    next_comp = "avionics_communication"
-                elif next_stage == "techno_managerial":
-                    next_comp = "techno_managerial"
-                else:
-                    next_comp = current_comp
+            if role_domain == "aerospace":
+                stage_competencies = {
+                    "ice_breaker": "ice_breaker",
+                    "applicant_validation": "computational_fluid_dynamics",
+                    "core_technical": "aerospace_aerodynamics",
+                    "deep_dive": "computational_fluid_dynamics",
+                    "application_scenario": "aerospace_aerodynamics",
+                    "system_engineering": "aerospace_aerodynamics",
+                    "techno_managerial": "techno_managerial"
+                }
+                next_comp = stage_competencies.get(next_stage, current_comp)
+            elif role_domain == "cyber":
+                stage_competencies = {
+                    "ice_breaker": "ice_breaker",
+                    "applicant_validation": "cybersecurity",
+                    "core_technical": "network_security",
+                    "deep_dive": "incident_response",
+                    "application_scenario": "incident_response",
+                    "system_engineering": "network_security",
+                    "techno_managerial": "techno_managerial"
+                }
+                next_comp = stage_competencies.get(next_stage, current_comp)
             else:
-                # Transition competency naturally to match stage for standard track
-                if next_stage == "fundamentals":
-                    next_comp = "cs_fundamentals"
-                elif next_stage == "role_technical":
-                    next_comp = "backend"
-                elif next_stage == "deep_dive":
-                    next_comp = "database" if "database" not in state.competency_scores else "system_design"
-                elif next_stage == "scenario_managerial":
-                    next_comp = "scenario_managerial"
-                else:
-                    next_comp = current_comp
+                stage_competencies = {
+                    "ice_breaker": "ice_breaker",
+                    "applicant_validation": radar_expertise,
+                    "core_technical": "radar_rf_systems",
+                    "deep_dive": "digital_signal_processing",
+                    "application_scenario": "avionics_communication",
+                    "system_engineering": "radar_rf_systems",
+                    "techno_managerial": "techno_managerial"
+                }
+                next_comp = stage_competencies.get(next_stage, current_comp)
 
             rationale = f"Stage '{current_stage}' quota met ({stage_count} questions). Progressing to stage '{next_stage}'. {diff_reason}"
             adaptive_reason = f"Advancing interview progression to {next_stage}."
@@ -272,14 +281,24 @@ class AdaptiveInterviewPolicy:
 
             if current_stage == "role_technical" and stage_count == 1:
                 if is_drdo:
-                    next_comp = "embedded_realtime_systems" if current_comp != "embedded_realtime_systems" else "radar_rf_systems"
+                    if role_domain == "aerospace":
+                        next_comp = "computational_fluid_dynamics" if current_comp != "computational_fluid_dynamics" else "aerospace_aerodynamics"
+                    elif role_domain == "cyber":
+                        next_comp = "network_security" if current_comp != "network_security" else "cybersecurity"
+                    else:
+                        next_comp = "embedded_realtime_systems" if current_comp != "embedded_realtime_systems" else "radar_rf_systems"
                 else:
                     next_comp = "database" if current_comp != "database" else "backend"
                 rationale = f"Broadening technical coverage: pivoting from '{current_comp}' to '{next_comp}'. {diff_reason}"
                 adaptive_reason = f"Pivoting technical competency to {next_comp}."
             elif current_stage == "deep_dive" and stage_count == 1:
                 if is_drdo:
-                    next_comp = "digital_signal_processing" if current_comp != "digital_signal_processing" else "radar_rf_systems"
+                    if role_domain == "aerospace":
+                        next_comp = "aerospace_fundamentals" if current_comp != "aerospace_fundamentals" else "computational_fluid_dynamics"
+                    elif role_domain == "cyber":
+                        next_comp = "cybersecurity" if current_comp != "cybersecurity" else "incident_response"
+                    else:
+                        next_comp = "digital_signal_processing" if current_comp != "digital_signal_processing" else "radar_rf_systems"
                 else:
                     next_comp = "system_design" if current_comp != "system_design" else "backend"
                 rationale = f"Deepening architectural evaluation: pivoting from '{current_comp}' to '{next_comp}'. {diff_reason}"

@@ -8,10 +8,12 @@ import { Label } from "@/components/ui/label";
 import { ROLES, DEFAULT_SETTINGS, type CandidateProfile } from "@/lib/interview-data";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { getLocalUser } from "@/lib/local-auth";
+import { createCandidate, listRoles } from "@/lib/backend-api";
 
 export const Route = createFileRoute("/_authenticated/apply")({
   ssr: false,
-  beforeLoad: ({ context }) => requireCandidate(context.user.id),
+  beforeLoad: () => requireCandidate(),
   head: () => ({
     meta: [
       { title: "Begin your interview — Boardroom AI" },
@@ -79,16 +81,36 @@ function Onboarding() {
     setStep((s) => Math.min(STEPS.length - 1, s + 1));
   };
 
-  const startInterview = () => {
+  const startInterview = async () => {
     if (!role) return;
-    const profile: CandidateProfile = {
+    try {
+      const authUser = getLocalUser();
+      if (!authUser) throw new Error("Please sign in before starting your interview.");
+      const apiRoles = await listRoles();
+      const normalize = (s: string) => s.toLowerCase().replace(/scientist\s+['’]?[bc]['’]?/g, "scientist").replace(/[^a-z0-9]+/g, " ").trim();
+      const match = apiRoles.find((r) => normalize(r.title).includes(normalize(role.title).replace(/^scientist\s+/, "")) || normalize(role.title).includes(normalize(r.title).replace(/^scientist\s+/, "")));
+      if (!match) throw new Error("This advertised post is not configured in the interview service.");
+      const candidate = await createCandidate({
+        name: authUser.name || "Candidate",
+        email: authUser.email || "",
+        experience: years,
+        education: "Candidate provided",
+        extractedSkills: skills,
+        resumeUrl: resumeName || "",
+      });
+      const profile: CandidateProfile & { backendCandidateId: string; backendRoleId: string } = {
       roleId: role.id,
       resumeName,
       yearsExperience: years,
       skills,
+        backendCandidateId: candidate._id,
+        backendRoleId: match._id,
     };
     sessionStorage.setItem("boardroom.profile", JSON.stringify(profile));
     navigate({ to: "/interview" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not connect to the interview service.");
+    }
   };
 
   return (

@@ -58,4 +58,7 @@ router.post('/:id/answers', interviewController.submitAnswer);
  */
 router.get('/:id/report', interviewController.getInterviewReport);
 
+/** @route POST /api/interviews/:id/integrity */
+router.post('/:id/integrity', interviewController.recordIntegrity);
+
 module.exports = router;

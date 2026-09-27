@@ -5,7 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { BoardHeader } from "@/components/BoardHeader";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { getLocalUser } from "@/lib/local-auth";
 import { HELPLINE_EMAIL, NEURO_CONDITIONS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { downloadReportPdf, toFinalReport } from "@/lib/report";
@@ -13,7 +13,7 @@ import { FinalReportView } from "@/components/FinalReportView";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   ssr: false,
-  beforeLoad: ({ context }) => requireCandidate(context.user.id),
+  beforeLoad: () => requireCandidate(),
   head: () => ({
     meta: [
       { title: "Candidate dashboard — Boardroom AI" },
@@ -38,14 +38,29 @@ function useMe() {
   return useQuery({
     queryKey: ["me"],
     queryFn: async () => {
-      const { data: u } = await supabase.auth.getUser();
-      const id = u.user!.id;
-      await supabase.rpc("ensure_profile");
-      const [{ data: profile }, { data: interviews }] = await Promise.all([
-        supabase.from("profiles").select("*").eq("id", id).maybeSingle(),
-        supabase.from("interviews").select("*").eq("candidate_id", id).order("created_at", { ascending: false }),
-      ]);
-      return { profile, interviews: interviews ?? [] };
+      const user = getLocalUser();
+      if (!user) return { profile: null, interviews: [] };
+      let neuro: { neurodivergent: boolean | null; conditions: string[] } = { neurodivergent: null, conditions: [] };
+      try {
+        const raw = localStorage.getItem(`boardroom.neuro.${user.id}`);
+        if (raw) neuro = JSON.parse(raw);
+      } catch {}
+
+      const profile = {
+        id: user.id,
+        full_name: user.name,
+        email: user.email,
+        neurodivergent: neuro.neurodivergent,
+        conditions: neuro.conditions,
+      };
+
+      let interviews: any[] = [];
+      try {
+        const raw = localStorage.getItem(`boardroom.interviews.${user.id}`);
+        if (raw) interviews = JSON.parse(raw);
+      } catch {}
+
+      return { profile, interviews };
     },
   });
 }
@@ -181,8 +196,10 @@ function NeuroQuestion({ onDone }: { onDone: () => void }) {
       return;
     }
     setSaving(true);
-    const { data: u } = await supabase.auth.getUser();
-    await supabase.from("profiles").update({ neurodivergent: answer, conditions: picked }).eq("id", u.user!.id);
+    const user = getLocalUser();
+    if (user) {
+      localStorage.setItem(`boardroom.neuro.${user.id}`, JSON.stringify({ neurodivergent: answer, conditions: picked }));
+    }
     setSaving(false);
     onDone();
   };

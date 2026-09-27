@@ -191,11 +191,28 @@ class AdaptiveContextRequest(BaseModel):
 
 class AnswerSubScores(BaseModel):
     """Section 7.2 sub-scores. The weighted total is computed deterministically."""
-    relevance: int = Field(ge=0, le=100, description="Weight 30%")
-    technicalCorrectness: int = Field(ge=0, le=100, description="Weight 30%")
-    completeness: int = Field(ge=0, le=100, description="Weight 20%")
-    reasoning: int = Field(ge=0, le=100, description="Weight 10%")
-    clarity: int = Field(ge=0, le=100, description="Weight 10%")
+    relevance: Optional[int] = Field(default=None, ge=0, le=100)
+    technicalCorrectness: Optional[int] = Field(default=None, ge=0, le=100)
+    completeness: Optional[int] = Field(default=None, ge=0, le=100)
+    reasoning: Optional[int] = Field(default=None, ge=0, le=100)
+    clarity: Optional[int] = Field(default=None, ge=0, le=100)
+    background_alignment: Optional[int] = Field(default=None, ge=0, le=100)
+    communication: Optional[int] = Field(default=None, ge=0, le=100)
+    experience_evidence: Optional[int] = Field(default=None, ge=0, le=100)
+    specificity: Optional[int] = Field(default=None, ge=0, le=100)
+    depth: Optional[int] = Field(default=None, ge=0, le=100)
+    assumptions: Optional[int] = Field(default=None, ge=0, le=100)
+    trade_offs: Optional[int] = Field(default=None, ge=0, le=100)
+    problem_solving: Optional[int] = Field(default=None, ge=0, le=100)
+    practical_applicability: Optional[int] = Field(default=None, ge=0, le=100)
+    architecture: Optional[int] = Field(default=None, ge=0, le=100)
+    system_reasoning: Optional[int] = Field(default=None, ge=0, le=100)
+    interfaces: Optional[int] = Field(default=None, ge=0, le=100)
+    reliability: Optional[int] = Field(default=None, ge=0, le=100)
+    prioritization: Optional[int] = Field(default=None, ge=0, le=100)
+    leadership: Optional[int] = Field(default=None, ge=0, le=100)
+    decision_making: Optional[int] = Field(default=None, ge=0, le=100)
+    risk_management: Optional[int] = Field(default=None, ge=0, le=100)
 
 
 class ConceptCoverageDetail(BaseModel):
@@ -233,6 +250,14 @@ class EvaluationResult(BaseModel):
     flags: List[str] = Field(default_factory=list, description="Deterministic guardrails triggered (e.g. off_topic, factually_incorrect)")
     evaluationMode: str = Field(default="unspecified", description="llm_assisted | deterministic | mock | external")
     strategyHint: Optional[str] = Field(default=None, description="Advisory hint for the adaptive layer; the policy engine still decides")
+    # --- Traceability fields (Task 9) ---
+    clarity: str = Field(default="clear", description="Evaluation of clarity: clear | vague | unclear")
+    questionId: Optional[str] = Field(default=None, description="ID of the evaluated question")
+    question: Optional[str] = Field(default=None, description="Text of the evaluated question")
+    answer: Optional[str] = Field(default=None, description="Candidate answer evaluated")
+    expectedConcepts: List[str] = Field(default_factory=list, description="Expected concepts for the question")
+    evidence: Optional[str] = Field(default=None, description="Textual evidence from answer for evaluation")
+    overallScore: Optional[int] = Field(default=None, description="Overall evaluated score (matches score)")
 
 
 class DecisionObject(BaseModel):
@@ -332,7 +357,7 @@ class ConceptEvidence(BaseModel):
 
 class CompetencyEvidence(BaseModel):
     competency: str
-    score: int = Field(ge=0, le=100, description="Observed quality of answers in this competency (0-100)")
+    score: Optional[int] = Field(default=None, ge=0, le=100, description="Observed quality of answers in this competency (0-100 or None if untested)")
     confidence: float = Field(ge=0.0, le=1.0, description="Evidence confidence based on demonstration depth (0.0-1.0)")
     coverage: float = Field(default=0.0, ge=0.0, le=1.0, description="Proportion of role concepts tested (0.0-1.0)")
     status: str = Field(..., description="demonstrated | partially_demonstrated | weak | insufficient_evidence | untested")
@@ -401,7 +426,7 @@ class EvidenceTimelineItem(BaseModel):
 class CompetencyCoverageData(BaseModel):
     competency: str
     coverage: float = Field(ge=0.0, le=1.0)
-    score: int = Field(ge=0, le=100)
+    score: Optional[int] = Field(default=None, ge=0, le=100)
     confidence: float = Field(ge=0.0, le=1.0)
     status: str
 

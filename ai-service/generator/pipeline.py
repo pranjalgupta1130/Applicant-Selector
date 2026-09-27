@@ -21,26 +21,68 @@ from core.schemas import (
 from core.config import settings
 from rag.retriever import KnowledgeRetriever
 from evaluator.relevance import QuestionRelevanceEvaluator
+from generator.fallback_bank import FallbackQuestionBank
 
 logger = logging.getLogger(__name__)
 
 
-SYSTEM_PROMPT = """You are an expert technical interviewer in a high-stakes engineering boardroom simulation.
-Generate exactly ONE focused, technically deep, and fair interview question based on the provided candidate profile, target role, stage, competency, and retrieved knowledge context.
+# ---------------------------------------------------------
+# Meta-Question Detection & Direct Candidate Address Gate
+# ---------------------------------------------------------
 
-CRITICAL RULES:
-1. Ask exactly ONE single question. Do not ask multi-part compound questions.
-2. Ground the question strictly in the provided retrieved technical context and target competency.
-3. Align the difficulty level (1=Beginner, 3=Mid-level, 5=Staff/Architect) with the stage.
-4. If previous missing concepts are provided, formulate the question to probe those gaps.
-5. Avoid duplicate or overlapping questions with the previously asked questions list.
-6. Provide clear, objective expected concepts that a strong answer must include.
-7. Provide a detailed rubric (poor, acceptable, excellent).
+META_QUESTION_PATTERNS = [
+    r"ice_breaker\s+feature",
+    r"design(?:ing)?\s+an?\s+(?:ice\s*breaker|interview)",
+    r"good\s+ice\s*breaker",
+    r"kinds?\s+thing",
+    r"kind\s+of\s+thing",
+    r"what\s+question\s+(?:should|can|would)",
+    r"how\s+should\s+(?:the|an)?\s*interviewer",
+    r"ask\s+the\s+candidate",
+    r"interview\s+question",
+    r"what\s+should\s+we\s+ask",
+    r"how\s+would\s+you\s+phrase\s+a\s+question",
+    r"create\s+a\s+question",
+    r"formulate\s+a\s+question",
+    r"what\s+is\s+a\s+good\s+question",
+    r"how\s+to\s+interview",
+    r"suggest\s+an?\s+interview",
+    r"design\s+a\s+question",
+    r"what\s+would\s+be\s+a\s+good\s+question",
+]
+
+
+def is_meta_question(text: str) -> bool:
+    """
+    Determines whether question text is a meta-interview question
+    (asking how to interview or design a question), which MUST NEVER
+    be presented to a candidate.
+    """
+    if not text:
+        return True
+    lowered = text.strip().lower()
+    for pattern in META_QUESTION_PATTERNS:
+        if re.search(pattern, lowered):
+            return True
+    return False
+
+
+SYSTEM_PROMPT = """You are an expert DRDO technical interview board member in a high-stakes engineering boardroom simulation.
+You are asking the candidate directly in the first person ("you" / "your").
+
+CRITICAL MANDATORY RULES:
+1. Ask exactly ONE focused, single-part technical or background question directly to the candidate.
+2. Address the candidate directly using "you" or "your" (e.g., "Could you explain...", "How did you design...", "What is...").
+3. NEVER generate meta-interview questions (e.g., "How would you design an ice breaker question", "What question should we ask", "How should an interviewer ask").
+4. Ground the question strictly in the provided retrieved technical context and target competency for the advertised role.
+5. Align difficulty level (1=Beginner, 3=Mid-level, 5=Staff/Architect) with the stage.
+6. Provide clear, objective expected concepts that a strong candidate answer must demonstrate.
+7. Provide a detailed rubric (poor: 0-40, acceptable: 41-75, excellent: 76-100).
 8. Return ONLY valid JSON adhering strictly to the JSON schema below. No markdown fences, no conversational preamble.
 
 REQUIRED JSON SCHEMA:
 {
-  "question": "The exact question text ending with a question mark",
+  "question": "The exact question text addressed to the candidate ending with a question mark",
   "expectedConcepts": ["concept 1", "concept 2", "concept 3"],
   "rubric": {
     "poor": "Criteria for failing/poor response (0-40)",
@@ -209,7 +251,28 @@ class QuestionGeneratorPipeline:
             "difficulty_rationale": f"Difficulty {difficulty}/5 appropriate for stage '{stage}'.",
             "adaptive_reason": resolved_adaptive_reason,
             "targeted_concepts": question_obj.expectedConcepts[:3],
-            "question_type": question_type
+            "question_type": question_type,
+            "retrieval_invoked": True,
+            "retrieval_count": len(retrieved_chunks),
+            "retrieval_mode": "dense" if getattr(self.retriever, "dense_available", False) else "tfidf_lexical",
+            "retrieved_sources": [
+                {"id": c.chunk_id, "title": c.title, "domain": c.domain, "score": c.score}
+                for c in retrieved_chunks
+            ],
+            "context_reached_generation": bool(retrieved_chunks),
+            "generation_mode": "curated_fallback" if question_obj.isFallback else "gemini_rag",
+            "diagnostics": {
+                "stage": stage,
+                "role": role.title,
+                "candidateExpertise": candidate.skills or candidate.claimed_expertise or [],
+                "competency": competency,
+                "retrievalQuery": query,
+                "retrievedSourceIds": [c.chunk_id for c in retrieved_chunks],
+                "retrievalDomain": getattr(role, "domain", "electronics_radar"),
+                "generatedQuestion": question_obj.text,
+                "isFallback": question_obj.isFallback,
+                "relevanceScore": question_obj.relevanceScore
+            }
         }
 
         return question_obj
@@ -323,104 +386,26 @@ Respond with valid JSON according to the schema."""
         retrieved_chunks: List[RetrievalResult],
         previous_questions: List[str],
         previous_missing_concepts: List[str],
-        question_type: str = "conceptual"
+        question_type: str = "conceptual",
+        used_fallback_ids: Optional[List[str]] = None
     ) -> QuestionObject:
         """
-        Deterministic, high-quality fallback using curated knowledge bank.
-        Ensures the interview never breaks even if offline, out of tokens, or under API error.
+        Deterministic, high-quality fallback using curated FallbackQuestionBank.
+        Guarantees zero meta-interview questions and zero repetition across turns.
         """
-        selected_chunk: Optional[RetrievalResult] = None
-        selected_question_text = ""
-        target_domain = getattr(role, "domain", None)
+        domain = getattr(role, "domain", None) or role.title or "electronics_radar"
+        used_ids_set = set(used_fallback_ids or [])
 
-        # Find best chunk that has sample questions not yet asked.
-        #
-        # The chunk MUST match the requested competency. Without this filter the
-        # retriever's top hit wins even when it belongs to another competency --
-        # and because expectedConcepts/rubric are then taken from that chunk, the
-        # question ends up labelled with one competency while carrying another
-        # one's concepts. Evaluation then judges the answer against concepts the
-        # question never asked about, scores it near zero, and the adaptive layer
-        # probes those same stale concepts forever. Most visible under TF-IDF
-        # retrieval (no embeddings), where the ice-breaker chunk often ranks top.
-        for chunk in retrieved_chunks:
-            if chunk.competency != competency:
-                continue
-            chunk_domain = getattr(chunk, "domain", None)
-            if target_domain and chunk_domain and chunk_domain != target_domain:
-                continue
-            raw_chunk = self.retriever.get_chunk_by_id(chunk.chunk_id)
-            if raw_chunk and raw_chunk.sample_questions:
-                for q in raw_chunk.sample_questions:
-                    if not self._is_duplicate(q, previous_questions):
-                        selected_chunk = chunk
-                        selected_question_text = q
-                        break
-            if selected_question_text:
-                break
-
-        # If all retrieved questions were already asked, pick from any chunk in this competency and domain
-        if not selected_question_text:
-            for c in self.retriever.chunks:
-                c_domain = getattr(c, "domain", None)
-                if target_domain and c_domain and c_domain != target_domain:
-                    continue
-                if c.competency == competency:
-                    for q in c.sample_questions:
-                        if not self._is_duplicate(q, previous_questions):
-                            selected_question_text = q
-                            selected_chunk = RetrievalResult(
-                                chunk_id=c.id,
-                                title=c.title,
-                                competency=c.competency,
-                                stage=c.stage,
-                                difficulty_level=c.difficulty_level,
-                                score=1.0,
-                                content=c.content,
-                                expected_concepts=c.expected_concepts,
-                                rubric=c.rubric,
-                                source=c.source,
-                                domain=getattr(c, "domain", "cyber_computing"),
-                                source_title=getattr(c, "source_title", None),
-                                source_reference=getattr(c, "source_reference", None)
-                            )
-                            break
-                if selected_question_text:
-                    break
-
-        # Ultimate fallback guarantee
-        if not selected_question_text:
-            selected_question_text = f"How would you approach designing and testing a reliable {competency} feature for a {role.title} system?"
-            rubric = RubricCriteria(
-                poor="Vague response lacking concrete technical details.",
-                acceptable="Mentions standard testing, error handling, and architecture.",
-                excellent="Comprehensive design detailing trade-offs, monitoring, and edge-case handling."
-            )
-            expected_concepts = [competency, "design trade-offs", "error handling", "testing"]
-            sources = ["KnowledgeBase-Fallback"]
-        else:
-            rubric = selected_chunk.rubric
-            expected_concepts = selected_chunk.expected_concepts
-            sources = [selected_chunk.chunk_id, selected_chunk.source]
-
-        # If previous missing concepts exist, adapt the question text
-        if previous_missing_concepts:
-            gap_str = ", ".join(previous_missing_concepts[:2])
-            selected_question_text = f"Following up on our earlier discussion regarding {gap_str}: {selected_question_text}"
-
-        return QuestionObject(
-            id=f"q_{uuid.uuid4().hex[:8]}",
-            text=selected_question_text,
+        q_obj = FallbackQuestionBank.get_fallback_question(
             stage=stage,
-            competency=competency,
-            difficulty=difficulty,
-            expectedConcepts=expected_concepts,
-            rubric=rubric,
-            relevanceScore=85,
-            sources=sources,
-            isFallback=True,
-            questionType=question_type
+            domain=domain,
+            used_ids=used_ids_set,
+            used_questions=previous_questions
         )
+
+        # Override question_type if specified
+        q_obj.questionType = question_type
+        return q_obj
 
     def _check_quality_gates(
         self,
@@ -441,6 +426,9 @@ Respond with valid JSON according to the schema."""
         7. Non-generic wording
         """
         issues = []
+        if is_meta_question(question.text):
+            issues.append("Question is a meta-interview question asking how to design an interview question rather than asking candidate directly")
+
         min_rel = 65 if stage == "ice_breaker" else 70
         if question.relevanceScore < min_rel:
             issues.append(f"Relevance score {question.relevanceScore} below gate threshold {min_rel}")
@@ -520,8 +508,12 @@ Respond with valid JSON according to the schema."""
         - use retrieved context / cite sources
         - contain expected concepts
         - not a generic chatbot question
+        - not a meta-interview question
         """
         issues = []
+        if is_meta_question(question.text):
+            issues.append("Question is a meta-interview question asking how to interview rather than asking candidate directly")
+
         if target_stage and question.stage != target_stage:
             issues.append(f"Stage mismatch: got '{question.stage}', expected '{target_stage}'")
         if target_competency and question.competency != target_competency:

@@ -127,7 +127,7 @@ class CompetencyEvaluator:
         if not relevant_turns and not tested_concepts:
             return CompetencyEvidence(
                 competency=competency,
-                score=0,
+                score=None,
                 confidence=0.0,
                 coverage=0.0,
                 status="untested",

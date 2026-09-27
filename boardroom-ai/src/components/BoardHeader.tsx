@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { clearLocalUser } from "@/lib/local-auth";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/BrandLogo";
@@ -21,8 +21,8 @@ export function BoardHeader({ right, showNav = true }: Props) {
   const signOut = async () => {
     await queryClient.cancelQueries();
     queryClient.clear();
-    const { error } = await supabase.auth.signOut({ scope: "local" });
-    if (error) console.warn("Local sign-out cleanup", error.message);
+    clearLocalUser();
+    window.dispatchEvent(new Event("boardroom-auth-changed"));
     await navigate({ to: "/auth", replace: true });
   };
 

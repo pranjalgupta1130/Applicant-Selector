@@ -108,7 +108,44 @@ COMPETENCY_CORE_CONCEPTS: Dict[str, List[str]] = {
         "hands-on project implementation",
         "design constraint trade-offs",
         "individual technical ownership"
-    ]
+    ],
+    "applicant_validation": [
+        "project contribution",
+        "technical challenges",
+        "engineering decisions",
+        "solution validation"
+    ],
+    "core_technical": [
+        "technical fundamentals",
+        "domain principles",
+        "performance factors",
+        "system mechanics"
+    ],
+    "deep_dive": [
+        "model assumptions",
+        "boundary conditions",
+        "trade-off analysis",
+        "failure modes"
+    ],
+    "application_scenario": [
+        "field vs lab performance",
+        "real-time optimization",
+        "diagnostic investigation",
+        "operational constraints"
+    ],
+    "system_engineering": [
+        "modular decomposition",
+        "interface control",
+        "risk mitigation",
+        "system reliability",
+        "verification and validation"
+    ],
+    "aerospace_fundamentals": ["continuity equation", "momentum conservation", "energy conservation", "Mach number"],
+    "computational_fluid_dynamics": ["Navier-Stokes equations", "finite-volume discretization", "mesh independence", "residual convergence"],
+    "aerospace_aerodynamics": ["boundary-layer separation", "shock-boundary-layer interaction", "Reynolds number", "lift and drag"],
+    "cybersecurity": ["attack surface", "least privilege", "threat modeling", "defense in depth"],
+    "network_security": ["network segmentation", "firewall policy", "TLS", "intrusion detection"],
+    "incident_response": ["incident triage", "containment", "eradication", "recovery", "lessons learned"]
 }
 
 
@@ -148,6 +185,12 @@ _BASE_COMPETENCY_KEYWORDS: Dict[str, List[str]] = {
         "inversion", "ceiling", "mutex", "semaphore", "watchdog", "timer", "dma",
         "scatter-gather", "bare-metal", "microcontroller", "arm", "cortex", "jitter"
     ],
+    "aerospace_fundamentals": ["mach", "compressible", "continuity", "momentum", "energy equation", "shock wave", "isentropic"],
+    "computational_fluid_dynamics": ["cfd", "navier-stokes", "finite volume", "mesh", "residual", "convergence", "turbulence model"],
+    "aerospace_aerodynamics": ["aerodynamic", "boundary layer", "separation", "shock", "reynolds", "lift", "drag", "compressible flow"],
+    "cybersecurity": ["cybersecurity", "threat model", "attack surface", "least privilege", "defense in depth", "vulnerability"],
+    "network_security": ["network security", "segmentation", "firewall", "tls", "intrusion detection", "zero trust"],
+    "incident_response": ["incident response", "triage", "containment", "eradication", "recovery", "nist 800-61"],
     "digital_signal_processing": [
         "dsp", "nyquist", "sampling", "aliasing", "fourier", "dft", "fft", "fir",
         "iir", "filter", "quantization", "fixed-point", "floating-point", "pulse compression",
@@ -171,6 +214,26 @@ _BASE_COMPETENCY_KEYWORDS: Dict[str, List[str]] = {
     "expertise_validation": [
         "claimed", "project", "hands-on", "implementation", "ownership",
         "architecture", "hardware", "firmware", "schematic", "validation"
+    ],
+    "applicant_validation": [
+        "project", "contribution", "challenging", "decisions", "factors",
+        "validate", "requirements", "limitation", "failure", "applied"
+    ],
+    "core_technical": [
+        "matched filter", "sampling", "doppler", "fft", "signal", "lift",
+        "stall", "reynolds", "drag", "security", "traffic", "authentication"
+    ],
+    "deep_dive": [
+        "assumptions", "trade-offs", "constrained", "failure modes", "diagnose",
+        "optimization", "sensitivity", "boundary"
+    ],
+    "application_scenario": [
+        "laboratory", "field", "performance", "real-time", "constraints",
+        "unusual conditions", "hardware", "safety-critical"
+    ],
+    "system_engineering": [
+        "decompose", "components", "interfaces", "risks", "mitigate",
+        "verification", "validation", "reliability", "maintainability", "subsystem"
     ]
 }
 

@@ -79,6 +79,13 @@ class Interview {
       questionsAsked: doc.questionsAsked !== undefined ? Number(doc.questionsAsked) : 0,
       startedAt: doc.startedAt || null,
       completedAt: doc.completedAt || null,
+      aiState: doc.aiState || null,
+      aiActiveQuestion: doc.aiActiveQuestion || null,
+      candidateSnapshot: doc.candidateSnapshot || null,
+      roleSnapshot: doc.roleSnapshot || null,
+      scorecard: doc.scorecard || null,
+      integrityEvents: Array.isArray(doc.integrityEvents) ? doc.integrityEvents : [],
+      warnings: Number(doc.warnings || 0),
       createdAt: now,
       updatedAt: now
     };
@@ -110,6 +117,13 @@ class Interview {
       questionsAsked: instance.questionsAsked,
       startedAt: instance.startedAt,
       completedAt: instance.completedAt,
+      aiState: instance.aiState || null,
+      aiActiveQuestion: instance.aiActiveQuestion || null,
+      candidateSnapshot: instance.candidateSnapshot || null,
+      roleSnapshot: instance.roleSnapshot || null,
+      scorecard: instance.scorecard || null,
+      integrityEvents: Array.isArray(instance.integrityEvents) ? instance.integrityEvents : [],
+      warnings: Number(instance.warnings || 0),
       createdAt: instance.createdAt || now,
       updatedAt: now
     };

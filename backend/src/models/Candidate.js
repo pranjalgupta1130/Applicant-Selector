@@ -3,6 +3,13 @@ const { readCollection, writeCollection, generateId } = require('../storage/json
 const COLLECTION = 'candidates';
 
 class Candidate {
+  static async findByEmail(email) {
+    const normalized = String(email || '').trim().toLowerCase();
+    if (!normalized) return null;
+    const items = await readCollection(COLLECTION);
+    return items.find((item) => String(item.email || '').trim().toLowerCase() === normalized) || null;
+  }
+
   static async findById(id) {
     const items = await readCollection(COLLECTION);
     return items.find((item) => item._id === id || item.id === id) || null;

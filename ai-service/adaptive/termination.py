@@ -22,9 +22,9 @@ class InterviewTerminationEngine:
     Deterministic rule engine that assesses whether the interview should terminate.
     """
 
-    MIN_TURNS: int = 4
+    MIN_TURNS: int = 7
     MAX_TURNS_SAFETY_CAP: int = 8
-    MIN_COVERAGE_THRESHOLD: float = 0.70
+    MIN_COVERAGE_THRESHOLD: float = 0.85
 
     @classmethod
     def evaluate_termination(
@@ -100,7 +100,7 @@ class InterviewTerminationEngine:
             )
 
         # 6. Sufficient Mastery & Evidence Coverage Achieved
-        if total_turns >= 5 and evidence_coverage >= cls.MIN_COVERAGE_THRESHOLD and has_reached_late_stage:
+        if total_turns >= 7 and evidence_coverage >= cls.MIN_COVERAGE_THRESHOLD and has_reached_late_stage:
             return TerminationDecision(
                 shouldTerminate=True,
                 reason=f"Comprehensive competency coverage demonstrated ({evidence_coverage:.0%} evidence coverage) across {stages_visited} stages.",
@@ -112,8 +112,8 @@ class InterviewTerminationEngine:
                 }
             )
 
-        # 7. Progression across all 5 stages completed
-        if stages_visited >= 4 and total_turns >= 5:
+        # 7. Progression across all 7 stages completed
+        if stages_visited >= 6 and total_turns >= 7:
             return TerminationDecision(
                 shouldTerminate=True,
                 reason=f"Stage progression ladder completed across {stages_visited} stages with sufficient evidence ({evidence_coverage:.0%}).",

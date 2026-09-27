@@ -1,5 +1,5 @@
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
-const DEFAULT_TIMEOUT_MS = Number(process.env.AI_SERVICE_TIMEOUT_MS) || 5000;
+const DEFAULT_TIMEOUT_MS = Number(process.env.AI_SERVICE_TIMEOUT_MS) || 10000;
 
 /**
  * Helper to make HTTP POST request with timeout
@@ -86,12 +86,18 @@ const checkHealth = async () => {
  * Fallback questions by stage
  */
 const STAGE_FALLBACK_QUESTIONS = {
-  ice_breaker: 'Could you introduce yourself and describe your experience relevant to this role?',
-  fundamentals: 'What are the key architecture and design principles you rely on in software development?',
-  technical: 'How would you design a highly available REST API service handling concurrent user requests?',
-  deep_dive: 'Can you detail a complex bug or performance bottleneck you resolved recently?',
-  scenario: 'How do you handle production outages or high-priority incidents under tight deadlines?',
-  closing: 'Do you have any questions for us regarding the technical environment or team workflow?'
+  ice_breaker: 'Could you briefly walk us through your academic background and the areas of engineering you have worked with most closely?',
+  applicant_validation: 'You mentioned your experience in this area. Could you describe one project where you applied that knowledge and explain your specific contribution?',
+  expertise_validation: 'You mentioned your experience in this area. Could you describe one project where you applied that knowledge and explain your specific contribution?',
+  fundamentals: 'You mentioned your experience in this area. Could you describe one project where you applied that knowledge and explain your specific contribution?',
+  core_technical: 'What are the primary technical factors and principles governing your domain of engineering?',
+  technical: 'What are the primary technical factors and principles governing your domain of engineering?',
+  deep_dive: 'What assumptions does your technical approach rely on, and what would happen if one of those assumptions no longer held?',
+  application_scenario: 'Suppose the system performs well under laboratory conditions but its performance drops significantly in the field. How would you investigate the cause?',
+  scenario: 'Suppose the system performs well under laboratory conditions but its performance drops significantly in the field. How would you investigate the cause?',
+  system_engineering: 'How would you decompose this system into major components and define the interfaces between them?',
+  techno_managerial: 'Suppose your team disagrees about the technical approach to a critical problem. How would you lead the team toward a decision?',
+  closing: 'Do you have any questions for us regarding the technical environment or project scope?'
 };
 
 /**

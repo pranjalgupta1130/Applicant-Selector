@@ -58,13 +58,18 @@ class InterviewState(BaseModel):
     score_history: List[int] = Field(default_factory=list)
     difficulty_trend: List[int] = Field(default_factory=list)
 
+    # Fallback deduplication tracking
+    used_fallback_ids: List[str] = Field(default_factory=list)
+
     # Stage & Competency Counters
     stage_question_counts: Dict[str, int] = Field(default_factory=lambda: {
         "ice_breaker": 0,
-        "fundamentals": 0,
-        "role_technical": 0,
+        "applicant_validation": 0,
+        "core_technical": 0,
         "deep_dive": 0,
-        "scenario_managerial": 0
+        "application_scenario": 0,
+        "system_engineering": 0,
+        "techno_managerial": 0
     })
     competency_scores: Dict[str, List[int]] = Field(default_factory=dict)
 

@@ -94,6 +94,9 @@ class InterviewOrchestrator:
             adaptive_reason="Opening interview ice-breaker to assess engineering background and core technical strengths."
         )
 
+        if opening_q and opening_q.id:
+            state.used_fallback_ids.append(opening_q.id)
+
         return InterviewStartResponse(
             interviewState=state.model_dump(),
             openingQuestion=opening_q
@@ -161,7 +164,7 @@ class InterviewOrchestrator:
         state.prerequisite_issues = list(dict.fromkeys(prereq_issues))
 
         # 5. Adaptive Policy Evaluation (Policy v2)
-        policy_decision: PolicyDecision = AdaptiveInterviewPolicy.evaluate_next_step(state)
+        policy_decision: PolicyDecision = AdaptiveInterviewPolicy.evaluate_next_step(state, candidate_skills=candidate.skills)
 
         # 6. Target-Concept Selection
         target_concepts = TargetConceptSelector.select_targets(
@@ -232,9 +235,13 @@ class InterviewOrchestrator:
                     retrieved_chunks=[],
                     previous_questions=state.previous_questions,
                     previous_missing_concepts=target_concepts or state.missing_concepts,
-                    question_type=policy_decision.recommended_question_type
+                    question_type=policy_decision.recommended_question_type,
+                    used_fallback_ids=state.used_fallback_ids
                 )
                 next_question.adaptiveReason = trace_reason
+
+            if next_question and next_question.id:
+                state.used_fallback_ids.append(next_question.id)
         else:
             # Authoritative termination: harmonize strategy
             policy_decision.strategy = "conclude_interview"

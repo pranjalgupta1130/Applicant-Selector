@@ -1,38 +1,38 @@
 import { useEffect, useState } from "react";
-import type { Session } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  getLocalUser,
+  type LocalRole,
+  type LocalUser,
+} from "@/lib/local-auth";
 
-export type AppRole = "admin" | "candidate";
+export type AppRole = LocalRole;
 
-/** Session + role for UI decisions only; access is enforced by route gates and database policies. */
 export function useAuth() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [roles, setRoles] = useState<AppRole[]>([]);
+  const [user, setUser] = useState<LocalUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let active = true;
-    const load = async (s: Session | null) => {
-      setSession(s);
-      if (!s) {
-        setRoles([]);
-        setLoading(false);
-        return;
-      }
-      const { data } = await supabase.from("user_roles").select("role").eq("user_id", s.user.id);
-      if (!active) return;
-      setRoles((data ?? []).map((r) => r.role as AppRole));
-      setLoading(false);
-    };
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
-      void load(s);
-    });
-    void supabase.auth.getSession().then(({ data }) => load(data.session));
+    setUser(getLocalUser());
+    setLoading(false);
+
+    const handleStorage = () => setUser(getLocalUser());
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("boardroom-auth-changed", handleStorage);
+
     return () => {
-      active = false;
-      sub.subscription.unsubscribe();
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("boardroom-auth-changed", handleStorage);
     };
   }, []);
 
-  return { session, user: session?.user ?? null, roles, isAdmin: roles.includes("admin"), loading };
+  const roles: AppRole[] = user ? [user.role] : [];
+
+  return {
+    session: user ? { user } : null,
+    user,
+    roles,
+    isAdmin: user?.role === "admin",
+    loading,
+  };
 }

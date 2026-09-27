@@ -23,6 +23,15 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------
 
 CONCEPT_SEMANTIC_SYNONYMS: Dict[str, List[str]] = {
+    # Domain-specific RAC opening-question evidence labels
+    "aerospace project overview": ["aerodynamics project", "aerospace project", "cfd project", "project in aerodynamics", "my project"],
+    "individual engineering contribution": ["my contribution", "my role", "i implemented", "i developed", "i designed", "i built"],
+    "cfd or aerodynamic method": ["cfd", "computational fluid dynamics", "aerodynamic analysis", "flow simulation", "wind tunnel"],
+    "validation approach": ["validated", "validation", "verified", "mesh convergence", "wind-tunnel data", "reference data"],
+    "security project overview": ["cybersecurity project", "security project", "network security project", "incident response project", "my project"],
+    "individual security contribution": ["my contribution", "my role", "i implemented", "i configured", "i analyzed", "i built"],
+    "threat or risk addressed": ["threat model", "security risk", "attack surface", "vulnerability", "risk addressed", "threat addressed"],
+    "verification evidence": ["verified", "validated", "tested", "audit log", "test results", "monitoring evidence"],
     # Caching & Memory
     "caching": ["cache", "redis", "memcached", "in-memory", "fast access", "volatile store", "query results in memory", "bypass disk", "frequently accessed", "ram"],
     "in-memory caching": ["cache", "redis", "memcached", "in-memory", "bypass disk", "fast lookup", "storing in memory", "volatile system ram", "system ram", "ram", "volatile store", "volatile"],
@@ -124,6 +133,7 @@ CONCEPT_SEMANTIC_SYNONYMS: Dict[str, List[str]] = {
     "time-bandwidth product": ["time-bandwidth product", "time-bandwidth", "b*tau", "processing gain", "chirp duration"],
     "range resolution": ["range resolution", "c/(2b)", "c / (2 * b)", "narrow sinc", "compressed width"],
     "linear frequency modulation": ["linear frequency modulation", "lfm", "chirp", "frequency sweep", "frequency ramp"],
+    "snr maximization": ["snr maximization", "maximize snr", "maximize the signal-to-noise ratio", "signal-to-noise ratio (snr)", "signal-to-noise ratio", "snr", "optimal detection"],
     "matched filter": ["matched filter", "correlation", "cross-correlation", "snr maximization", "h(t) = s*(t0-t)"],
     "beat frequency": ["beat frequency", "f_b", "difference frequency", "homodyne mixer output", "frequency difference"],
     "sweep bandwidth": ["sweep bandwidth", "chirp bandwidth", "bandwidth b", "frequency sweep", "chirp sweep"],
@@ -241,7 +251,35 @@ class MockAnswerEvaluator(BaseAnswerEvaluator):
                 isFallback=True
             )
 
-        # 2. Check for obvious contradictory or nonsense answers
+        # 2. Check for explicit false assertions / factually incorrect statements
+        false_assertion_reason = None
+        if "matched filtering" in answer_lower and ("encrypt" in answer_lower or "security" in answer_lower or "cipher" in answer_lower):
+            false_assertion_reason = "Answer incorrectly asserts that matched filtering is used for encryption rather than SNR maximization."
+        elif "fft" in answer_lower and ("database" in answer_lower or "sql" in answer_lower):
+            false_assertion_reason = "Answer incorrectly asserts that FFT is used for database operations rather than spectral analysis."
+
+        if false_assertion_reason:
+            return EvaluationResult(
+                score=18,
+                coveredConcepts=[],
+                missingConcepts=list(expected),
+                reasoning=false_assertion_reason,
+                confidence=0.92,
+                technicalCorrectness="inaccurate",
+                completeness="minimal",
+                relevance="off_topic",
+                depth="shallow",
+                isFallback=True,
+                questionId=question.id,
+                question=question.text,
+                answer=cleaned_answer,
+                expectedConcepts=list(expected),
+                evidence=false_assertion_reason,
+                clarity="unclear",
+                overallScore=18
+            )
+
+        # 3. Check for obvious contradictory or nonsense answers
         if any(phrase in answer_lower for phrase in NONSENSE_OR_CONTRADICTORY_PHRASES):
             return EvaluationResult(
                 score=18,
@@ -253,10 +291,17 @@ class MockAnswerEvaluator(BaseAnswerEvaluator):
                 completeness="minimal",
                 relevance="off_topic",
                 depth="shallow",
-                isFallback=True
+                isFallback=True,
+                questionId=question.id,
+                question=question.text,
+                answer=cleaned_answer,
+                expectedConcepts=list(expected),
+                evidence="Answer contains contradictory or nonsensical claims.",
+                clarity="unclear",
+                overallScore=18
             )
 
-        # 3. Check for obvious hallucination or domain cross-talk
+        # 4. Check for obvious hallucination or domain cross-talk
         if any(phrase in answer_lower for phrase in HALLUCINATION_OR_MISMATCH_PATTERNS):
             return EvaluationResult(
                 score=18,
@@ -268,10 +313,17 @@ class MockAnswerEvaluator(BaseAnswerEvaluator):
                 completeness="minimal",
                 relevance="off_topic",
                 depth="shallow",
-                isFallback=True
+                isFallback=True,
+                questionId=question.id,
+                question=question.text,
+                answer=cleaned_answer,
+                expectedConcepts=list(expected),
+                evidence="Conflates unrelated engineering domains.",
+                clarity="unclear",
+                overallScore=18
             )
 
-        # 3. Detect Keyword Stuffing (buzzword dropping without explanatory grammar/predicates)
+        # 5. Detect Keyword Stuffing (buzzword dropping without explanatory grammar/predicates)
         words = re.findall(r"\b\w+\b", answer_lower)
         total_word_count = len(words)
         
@@ -315,10 +367,17 @@ class MockAnswerEvaluator(BaseAnswerEvaluator):
                 completeness="minimal",
                 relevance="partially_relevant",
                 depth="shallow",
-                isFallback=True
+                isFallback=True,
+                questionId=question.id,
+                question=question.text,
+                answer=cleaned_answer,
+                expectedConcepts=list(expected),
+                evidence="Dropped keywords without explanatory verbs or logical structure.",
+                clarity="vague",
+                overallScore=28
             )
 
-        # 4. Check for off-topic responses (e.g. food, sports, completely unrelated domain)
+        # 6. Check for off-topic responses (e.g. food, sports, completely unrelated domain)
         off_topic_markers = ["pasta", "cooking", "football", "cricket", "weather", "recipe", "baking", "movie", "song", "vacation"]
         if any(m in answer_lower for m in off_topic_markers) and not any(exp.lower() in answer_lower for exp in expected):
             return EvaluationResult(
@@ -331,10 +390,17 @@ class MockAnswerEvaluator(BaseAnswerEvaluator):
                 completeness="minimal",
                 relevance="off_topic",
                 depth="shallow",
-                isFallback=True
+                isFallback=True,
+                questionId=question.id,
+                question=question.text,
+                answer=cleaned_answer,
+                expectedConcepts=list(expected),
+                evidence="Completely off-topic response.",
+                clarity="unclear",
+                overallScore=10
             )
 
-        # 5. Semantic & Lexical Concept Coverage Detection
+        # 7. Semantic & Lexical Concept Coverage Detection
         covered: List[str] = []
         missing: List[str] = []
 
@@ -368,7 +434,7 @@ class MockAnswerEvaluator(BaseAnswerEvaluator):
         total_expected = len(expected)
         coverage_ratio = len(covered) / total_expected if total_expected > 0 else 0.0
 
-        # 6. Rubric Alignment & Quality Grading
+        # 8. Rubric Alignment & Quality Grading
         rubric = question.rubric
         excellent_keywords = [w.lower() for w in re.split(r"\W+", rubric.excellent) if len(w) > 4]
         poor_keywords = [w.lower() for w in re.split(r"\W+", rubric.poor) if len(w) > 4]
@@ -421,6 +487,8 @@ class MockAnswerEvaluator(BaseAnswerEvaluator):
         else:
             reasoning = f"Candidate failed to address core expected concepts: {', '.join(missing)}."
 
+        clarity_val = "clear" if depth in ("deep", "adequate") and relevance == "directly_relevant" else "vague"
+
         return EvaluationResult(
             score=final_score,
             coveredConcepts=covered,
@@ -431,7 +499,14 @@ class MockAnswerEvaluator(BaseAnswerEvaluator):
             completeness=completeness,
             relevance=relevance,
             depth=depth,
-            isFallback=True
+            isFallback=True,
+            questionId=question.id,
+            question=question.text,
+            answer=cleaned_answer,
+            expectedConcepts=list(expected),
+            evidence=reasoning,
+            clarity=clarity_val,
+            overallScore=final_score
         )
 
 
@@ -624,7 +699,14 @@ Evaluate the candidate answer according to the rubric and guidelines. Return JSO
             completeness=completeness,
             relevance=relevance,
             depth=depth,
-            isFallback=False
+            isFallback=False,
+            questionId=question.id,
+            question=question.text,
+            answer=candidate_answer,
+            expectedConcepts=list(expected),
+            evidence=reasoning,
+            clarity="clear" if depth in ("deep", "adequate") and relevance == "directly_relevant" else "vague",
+            overallScore=score
         )
 
     def _clean_and_parse_json(self, raw_text: str) -> Optional[Dict[str, Any]]:

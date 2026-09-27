@@ -19,14 +19,18 @@ const createCandidate = async (candidateData) => {
     throw err;
   }
 
-  const newCandidate = await Candidate.create({
+  const normalized = {
     name: name.trim(),
     email: email ? email.trim() : '',
     experience: experience ? experience.trim() : '',
     education: education ? education.trim() : '',
     extractedSkills: extractedSkills || [],
     resumeUrl: resumeUrl ? resumeUrl.trim() : ''
-  });
+  };
+  const existing = normalized.email ? await Candidate.findByEmail(normalized.email) : null;
+  const newCandidate = existing
+    ? await Candidate.findByIdAndUpdate(existing._id, normalized)
+    : await Candidate.create(normalized);
 
   return newCandidate;
 };

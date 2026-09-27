@@ -223,10 +223,15 @@ class QuestionRelevanceEvaluator:
     def _score_difficulty_appropriateness(cls, stage: str, difficulty: int, q_text: str) -> Tuple[int, str]:
         """Validates that requested difficulty and stage progression align."""
         stage_expected_diffs = {
-            "ice_breaker": [1],
-            "fundamentals": [1, 2],
-            "role_technical": [2, 3, 4],
+            "ice_breaker": [1, 2],
+            "applicant_validation": [1, 2, 3],
+            "core_technical": [2, 3, 4],
             "deep_dive": [3, 4, 5],
+            "application_scenario": [3, 4, 5],
+            "system_engineering": [3, 4, 5],
+            "techno_managerial": [3, 4, 5],
+            "fundamentals": [1, 2, 3],
+            "role_technical": [2, 3, 4],
             "scenario_managerial": [3, 4, 5]
         }
         allowed = stage_expected_diffs.get(stage, [1, 2, 3, 4, 5])

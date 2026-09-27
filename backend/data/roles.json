@@ -16,5 +16,109 @@
     "isActive": true,
     "createdAt": "2026-09-27T12:55:22.562Z",
     "updatedAt": "2026-09-27T12:55:22.562Z"
+  },
+  {
+    "_id": "2ba4fc94fd37a7436ecea2df",
+    "title": "Scientist B — Aerodynamics",
+    "description": "Compressible flow, computational fluid dynamics, flight loads, and vehicle stability.",
+    "competencies": [
+      {
+        "name": "computational_fluid_dynamics"
+      },
+      {
+        "name": "aerospace_aerodynamics"
+      },
+      {
+        "name": "aerospace_fundamentals"
+      }
+    ],
+    "difficulty": 3,
+    "isActive": true,
+    "createdAt": "2026-09-27T18:43:20.754Z",
+    "updatedAt": "2026-09-27T19:01:07.554Z",
+    "aiRoleId": "drdo_scientist_aerospace",
+    "domain": "aerospace_aerodynamics"
+  },
+  {
+    "_id": "76c3c681964184123de58c33",
+    "title": "Scientist C — Radar Signal Processing",
+    "description": "Radar detection, digital signal processing, clutter modelling, and adaptive beamforming.",
+    "competencies": [
+      {
+        "name": "embedded_realtime_systems"
+      },
+      {
+        "name": "digital_signal_processing"
+      },
+      {
+        "name": "radar_rf_systems"
+      }
+    ],
+    "difficulty": 3,
+    "isActive": true,
+    "createdAt": "2026-09-27T18:43:20.758Z",
+    "updatedAt": "2026-09-27T19:01:07.555Z",
+    "aiRoleId": "drdo_scientist_radar",
+    "domain": "electronics_radar"
+  },
+  {
+    "_id": "2413409986ab0b5a2d966713",
+    "title": "Scientist B — Composite Materials",
+    "description": "Fibre-matrix mechanics, failure criteria, and thermal ageing.",
+    "competencies": [
+      {
+        "name": "composite_materials"
+      },
+      {
+        "name": "materials_science"
+      }
+    ],
+    "difficulty": 3,
+    "isActive": true,
+    "createdAt": "2026-09-27T18:43:20.758Z",
+    "updatedAt": "2026-09-27T19:01:07.555Z",
+    "aiRoleId": "drdo_scientist_materials",
+    "domain": "aerospace_aerodynamics"
+  },
+  {
+    "_id": "bba07c38dc0c58e45eb28481",
+    "title": "Scientist C — Guidance & Control",
+    "description": "State estimation, nonlinear control, and seeker integration.",
+    "competencies": [
+      {
+        "name": "control_systems"
+      },
+      {
+        "name": "state_estimation"
+      }
+    ],
+    "difficulty": 3,
+    "isActive": true,
+    "createdAt": "2026-09-27T18:43:20.758Z",
+    "updatedAt": "2026-09-27T19:01:07.555Z",
+    "aiRoleId": "drdo_scientist_guidance",
+    "domain": "electronics_radar"
+  },
+  {
+    "_id": "0618995c76f76efa397e31de",
+    "title": "Scientist B — Cybersecurity",
+    "description": "Network security, threat analysis, secure systems, and incident response.",
+    "competencies": [
+      {
+        "name": "cybersecurity"
+      },
+      {
+        "name": "network_security"
+      },
+      {
+        "name": "incident_response"
+      }
+    ],
+    "difficulty": 3,
+    "isActive": true,
+    "createdAt": "2026-09-27T18:43:20.758Z",
+    "updatedAt": "2026-09-27T19:01:07.555Z",
+    "aiRoleId": "drdo_scientist_cyber",
+    "domain": "cyber_computing"
   }
 ]

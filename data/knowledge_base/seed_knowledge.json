@@ -2300,5 +2300,233 @@
     "source_title": "Reliability Prediction of Electronic Equipment (DoD Handbook)",
     "source_type": "official_standard",
     "source_reference": "MIL-HDBK-217F Notice 2, Department of Defense, USA"
+  },
+  {
+    "id": "chunk_aero_cfd_01",
+    "role_id": "drdo_scientist_aerospace",
+    "competency": "computational_fluid_dynamics",
+    "stage": "role_technical",
+    "difficulty_level": 3,
+    "title": "CFD Governing Equations and Numerical Discretization",
+    "content": "Computational fluid dynamics approximates conservation of mass, momentum, and energy for a flow field. A numerical method discretizes the governing equations over a mesh; finite-volume methods balance fluxes across control-volume faces. A credible solution requires mesh and time-step sensitivity checks, residual monitoring, and comparison with suitable validation data.",
+    "expected_concepts": [
+      "Navier-Stokes equations",
+      "finite-volume discretization",
+      "mesh independence",
+      "residual convergence",
+      "validation data"
+    ],
+    "sample_questions": [
+      "How would you establish that a finite-volume CFD solution is numerically converged and independent of the mesh?",
+      "When would you refine a CFD mesh near a wall or shock, and how would you verify the refinement improved the result?"
+    ],
+    "rubric": {
+      "poor": "Names a solver without discussing conservation, discretization, or verification.",
+      "acceptable": "Explains governing equations and at least one convergence or mesh check.",
+      "excellent": "Connects conservation-law discretization to residual and grid sensitivity checks and independent validation."
+    },
+    "source": "NASA Glenn Research Center — Navier-Stokes Equation",
+    "domain": "aerospace_aerodynamics",
+    "discipline": "Aeronautical Engineering",
+    "topic": "computational_fluid_dynamics",
+    "source_title": "Navier-Stokes Equation — NASA Glenn Research Center",
+    "source_type": "official_reference",
+    "source_reference": "https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/navier-strokes-equation/"
+  },
+  {
+    "id": "chunk_aero_boundary_01",
+    "role_id": "drdo_scientist_aerospace",
+    "competency": "aerospace_aerodynamics",
+    "stage": "deep_dive",
+    "difficulty_level": 4,
+    "title": "Boundary Layers, Separation, and Aerodynamic Loads",
+    "content": "Viscosity creates a near-wall boundary layer in which velocity rises from the no-slip wall value toward the external flow. Boundary-layer growth and separation affect skin-friction drag, lift, stall, and heat transfer. Similarity parameters such as Reynolds and Mach numbers help determine whether a test or model represents the relevant flow regime.",
+    "expected_concepts": [
+      "boundary-layer development",
+      "separation",
+      "Reynolds number",
+      "skin-friction drag",
+      "lift and stall"
+    ],
+    "sample_questions": [
+      "A predicted wing section shows earlier separation than the wind-tunnel data. Which flow and modelling assumptions would you examine first, and why?",
+      "How would a boundary-layer separation change the aerodynamic loads and what evidence would you use to validate the prediction?"
+    ],
+    "rubric": {
+      "poor": "Treats the boundary layer as unrelated to surface loads or flow separation.",
+      "acceptable": "Connects viscous near-wall flow with separation or drag.",
+      "excellent": "Explains relevant similarity parameters, separation effects, and validation evidence for the predicted loads."
+    },
+    "source": "NASA Glenn Research Center — Boundary Layer",
+    "domain": "aerospace_aerodynamics",
+    "discipline": "Aeronautical Engineering",
+    "topic": "boundary_layer_aerodynamics",
+    "source_title": "Boundary Layer — NASA Glenn Research Center",
+    "source_type": "official_reference",
+    "source_reference": "https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/boundary-layer/"
+  },
+  {
+    "id": "chunk_aero_compressible_01",
+    "role_id": "drdo_scientist_aerospace",
+    "competency": "aerospace_fundamentals",
+    "stage": "fundamentals",
+    "difficulty_level": 2,
+    "title": "Compressibility and Mach-Number Effects",
+    "content": "At low flow speeds, density changes may be small enough for an incompressible approximation. As speed approaches the local speed of sound, density variation and shock waves can materially change pressure, lift, and drag. The appropriate model should be selected from the flow regime and checked against the assumptions behind the chosen equations.",
+    "expected_concepts": [
+      "Mach number",
+      "density variation",
+      "compressibility effects",
+      "shock waves",
+      "model assumptions"
+    ],
+    "sample_questions": [
+      "What physical changes make compressibility important as an aircraft approaches transonic speed?",
+      "How would you decide whether an incompressible flow model is appropriate for a particular aerodynamic case?"
+    ],
+    "rubric": {
+      "poor": "Defines speed without linking it to density or pressure changes.",
+      "acceptable": "Relates Mach number to density variation or shock formation.",
+      "excellent": "Explains regime-dependent assumptions and consequences for aerodynamic loads and model selection."
+    },
+    "source": "NASA Glenn Research Center — Factors That Affect Aerodynamics",
+    "domain": "aerospace_aerodynamics",
+    "discipline": "Aeronautical Engineering",
+    "topic": "compressible_flow",
+    "source_title": "Factors That Affect Aerodynamics — NASA Glenn Research Center",
+    "source_type": "official_reference",
+    "source_reference": "https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/factors-that-affect-aerodynamics/"
+  },
+  {
+    "id": "chunk_cyber_incident_01",
+    "role_id": "drdo_scientist_cyber",
+    "competency": "incident_response",
+    "stage": "application_scenario",
+    "difficulty_level": 3,
+    "title": "Cybersecurity Incident Response and Recovery",
+    "content": "Incident response is integrated with cybersecurity risk management. A response capability prepares teams, detects and analyzes events, contains impact, coordinates recovery, and uses lessons learned to improve safeguards. Actions should preserve useful evidence, limit operational harm, and be coordinated with the organization’s incident procedures.",
+    "expected_concepts": [
+      "incident triage",
+      "containment",
+      "recovery",
+      "evidence preservation",
+      "lessons learned"
+    ],
+    "sample_questions": [
+      "A network monitor reports possible credential theft on a mission-support server. What steps would you take to assess and contain the incident while preserving evidence?",
+      "After a confirmed intrusion is contained, how would you plan recovery and feed lessons into the security-risk process?"
+    ],
+    "rubric": {
+      "poor": "Suggests an uncoordinated shutdown or focuses only on punishment.",
+      "acceptable": "Describes assessment, containment, and a recovery step.",
+      "excellent": "Balances impact containment, evidence, coordinated recovery, communications, and post-incident improvement."
+    },
+    "source": "NIST SP 800-61 Rev. 3",
+    "domain": "cyber_computing",
+    "discipline": "Computer Science & Engineering",
+    "topic": "incident_response",
+    "source_title": "Incident Response Recommendations and Considerations for Cybersecurity Risk Management: A CSF 2.0 Community Profile",
+    "source_type": "official_standard",
+    "source_reference": "https://csrc.nist.gov/pubs/sp/800/61/r3/final"
+  },
+  {
+    "id": "chunk_cyber_network_01",
+    "role_id": "drdo_scientist_cyber",
+    "competency": "network_security",
+    "stage": "role_technical",
+    "difficulty_level": 3,
+    "title": "Network Segmentation and Defense-in-Depth",
+    "content": "Network security controls should reduce unnecessary trust between systems. Segmentation limits reachable services and helps contain compromise; authentication, encrypted channels, monitoring, and least-privilege policy provide complementary safeguards. Design decisions should account for mission availability, system boundaries, and how operators detect and respond to misuse.",
+    "expected_concepts": [
+      "network segmentation",
+      "least privilege",
+      "encrypted communication",
+      "monitoring",
+      "availability trade-offs"
+    ],
+    "sample_questions": [
+      "How would you segment a sensitive engineering network while still allowing approved data exchange and monitoring?",
+      "A service must remain available during a network-security incident. How would you balance segmentation, access control, and recovery?"
+    ],
+    "rubric": {
+      "poor": "Relies on one perimeter control and ignores internal access paths.",
+      "acceptable": "Proposes segmentation and at least one complementary access or monitoring control.",
+      "excellent": "Explains trust boundaries, least privilege, detection, availability constraints, and controlled data flows."
+    },
+    "source": "NIST SP 800-61 Rev. 3",
+    "domain": "cyber_computing",
+    "discipline": "Computer Science & Engineering",
+    "topic": "network_security",
+    "source_title": "Incident Response Recommendations and Considerations for Cybersecurity Risk Management: A CSF 2.0 Community Profile",
+    "source_type": "official_standard",
+    "source_reference": "https://csrc.nist.gov/pubs/sp/800/61/r3/final"
+  },
+  {
+    "stage": "ice_breaker",
+    "difficulty_level": 1,
+    "rubric": {
+      "poor": "Cannot explain personal technical ownership or project goals.",
+      "acceptable": "Summarizes a relevant project and individual contribution.",
+      "excellent": "Connects a specific engineering challenge, personal decisions, validation, and learning."
+    },
+    "source": "DRDO-RAC-Public-Interview-Structure",
+    "source_type": "interview_guidance",
+    "id": "chunk_aero_ice_01",
+    "role_id": "drdo_scientist_aerospace",
+    "competency": "ice_breaker",
+    "title": "Aerospace Candidate Project and CFD Experience",
+    "content": "Opening interview context for aeronautical candidates: invite a concise account of the candidate’s aerospace project, their own contribution, flow regime, analysis or test methods, validation approach, and engineering lesson. Probe claimed computational-fluid-dynamics or aerodynamic expertise through the candidate’s own example.",
+    "expected_concepts": [
+      "aerospace project overview",
+      "individual engineering contribution",
+      "CFD or aerodynamic method",
+      "validation approach"
+    ],
+    "sample_questions": [
+      "Could you describe an aerodynamics or CFD project you worked on, your individual contribution, and how you checked the results?",
+      "Which flow condition or aerodynamic challenge in your project required the most engineering judgment, and how did you validate your approach?",
+      "What assumptions about the flow did your CFD model require, and which assumption had the greatest effect on the result?",
+      "How did you decide that the aerodynamic result from your project was credible enough to inform a design decision?",
+      "Describe one disagreement between simulation and experiment in your aerospace work and how you investigated it.",
+      "Which part of an aerodynamic analysis did you personally implement, and how did you check it independently?"
+    ],
+    "domain": "aerospace_aerodynamics",
+    "discipline": "Aeronautical Engineering",
+    "source_title": "DRDO-RAC Public Interview Structure",
+    "source_reference": "DRDO-RAC-Public-Interview-Structure"
+  },
+  {
+    "stage": "ice_breaker",
+    "difficulty_level": 1,
+    "rubric": {
+      "poor": "Cannot explain personal technical ownership or project goals.",
+      "acceptable": "Summarizes a relevant project and individual contribution.",
+      "excellent": "Connects a specific engineering challenge, personal decisions, validation, and learning."
+    },
+    "source": "DRDO-RAC-Public-Interview-Structure",
+    "source_type": "interview_guidance",
+    "id": "chunk_cyber_ice_01",
+    "role_id": "drdo_scientist_cyber",
+    "competency": "ice_breaker",
+    "title": "Cybersecurity Candidate Project and Security Ownership",
+    "content": "Opening interview context for cybersecurity candidates: invite a concise account of a security, network, or incident-response project, the candidate’s personal contribution, the threat or operational constraint, and how the work was verified. Follow up on the candidate’s stated security specialization rather than assuming unverified expertise.",
+    "expected_concepts": [
+      "security project overview",
+      "individual security contribution",
+      "threat or risk addressed",
+      "verification evidence"
+    ],
+    "sample_questions": [
+      "Could you walk us through a cybersecurity or network-security project you worked on and the part you personally owned?",
+      "What security risk did your project address, how did you verify the control worked, and what trade-off did you make?",
+      "Describe a security control you implemented, the threat it addressed, and the evidence you used to verify it.",
+      "What was the most difficult security trade-off in your project, and how did you explain the residual risk?",
+      "Tell us about a network or incident-response finding you personally investigated and how you confirmed the root cause.",
+      "How did your project preserve service availability while reducing the security risk?"
+    ],
+    "domain": "cyber_computing",
+    "discipline": "Computer Science & Engineering",
+    "source_title": "DRDO-RAC Public Interview Structure",
+    "source_reference": "DRDO-RAC-Public-Interview-Structure"
   }
 ]

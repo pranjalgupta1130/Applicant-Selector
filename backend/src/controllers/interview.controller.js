@@ -1,11 +1,12 @@
 const interviewService = require('../services/interview.service');
+const closedLoop = require('../services/closed-loop-interview.service');
 
 /**
  * Controller: POST /api/interviews
  */
 const createInterview = async (req, res, next) => {
   try {
-    const interview = await interviewService.createInterview(req.body);
+    const interview = await closedLoop.createInterview(req.body);
     res.status(201).json({
       success: true,
       data: interview
@@ -21,7 +22,7 @@ const createInterview = async (req, res, next) => {
  */
 const getInterviewById = async (req, res, next) => {
   try {
-    const interview = await interviewService.getInterviewById(req.params.id);
+    const interview = await closedLoop.getInterview(req.params.id);
     res.status(200).json({
       success: true,
       data: interview
@@ -37,7 +38,7 @@ const getInterviewById = async (req, res, next) => {
  */
 const startInterview = async (req, res, next) => {
   try {
-    const interview = await interviewService.startInterview(req.params.id);
+    const interview = await closedLoop.startInterview(req.params.id);
     res.status(200).json({
       success: true,
       data: interview
@@ -102,7 +103,7 @@ const getInterviewQuestionById = async (req, res, next) => {
  */
 const submitAnswer = async (req, res, next) => {
   try {
-    const answer = await interviewService.submitAnswer(req.params.id, req.body);
+    const answer = await closedLoop.submitAnswer(req.params.id, req.body);
     res.status(201).json({
       success: true,
       data: answer
@@ -118,11 +119,21 @@ const submitAnswer = async (req, res, next) => {
  */
 const getInterviewReport = async (req, res, next) => {
   try {
-    const report = await interviewService.getInterviewReport(req.params.id);
+    const report = await closedLoop.getReport(req.params.id);
     res.status(200).json({
       success: true,
       data: report
     });
+  } catch (error) {
+    res.status(error.statusCode || 500);
+    next(error);
+  }
+};
+
+const recordIntegrity = async (req, res, next) => {
+  try {
+    const data = await closedLoop.recordIntegrity(req.params.id, req.body.events, req.body.status);
+    res.status(200).json({ success: true, data });
   } catch (error) {
     res.status(error.statusCode || 500);
     next(error);
@@ -137,5 +148,6 @@ module.exports = {
   getInterviewQuestions,
   getInterviewQuestionById,
   submitAnswer,
-  getInterviewReport
+  getInterviewReport,
+  recordIntegrity
 };

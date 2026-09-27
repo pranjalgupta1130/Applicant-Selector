@@ -1,7 +1,6 @@
 import { requireCandidate } from "@/lib/candidate-guard";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BoardHeader } from "@/components/BoardHeader";
 import { Chalkboard, type ChalkboardHandle } from "@/components/Chalkboard";
 import { ReasoningAnswer, type ReasoningHandle } from "@/components/ReasoningAnswer";
@@ -17,26 +16,25 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { supabase } from "@/integrations/supabase/client";
+import { getLocalUser } from "@/lib/local-auth";
 import { useProctor, type Violation } from "@/hooks/useProctor";
-import { followUp, finalizeInterview, type LanguageNote } from "@/lib/interview.functions";
-import { toFinalReport, type FinalReport } from "@/lib/report";
+import type { FinalReport, LanguageNote } from "@/lib/report";
 import { FinalReportView } from "@/components/FinalReportView";
 import { ReportCountdown } from "@/components/ReportCountdown";
 import {
   DEFAULT_SETTINGS,
   ROLES,
-  buildQuestionSet,
-  questionKind,
   type CandidateProfile,
 } from "@/lib/interview-data";
+import { createInterview, getInterviewReport, recordInterviewIntegrity, startInterview, submitInterviewAnswer, type BackendQuestion } from "@/lib/backend-api";
 import { HELPLINE_EMAIL } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { QuestionReadAloud } from "@/components/QuestionReadAloud";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/interview")({
   ssr: false,
-  beforeLoad: ({ context }) => requireCandidate(context.user.id),
+  beforeLoad: () => requireCandidate(),
   head: () => ({
     meta: [
       { title: "Interview in session — Boardroom AI" },
@@ -48,7 +46,7 @@ export const Route = createFileRoute("/_authenticated/interview")({
   component: InterviewScreen,
 });
 
-const { timerSeconds, warningThresholdSeconds, questionsPerInterview } = DEFAULT_SETTINGS;
+const { timerSeconds, warningThresholdSeconds } = DEFAULT_SETTINGS;
 
 type Item = {
   id: string;
@@ -72,15 +70,14 @@ type Answer = {
   secondsUsed: number;
   skipped: boolean;
   languageNotes: LanguageNote[];
+  score?: number | undefined;
+  evaluationNote?: string | undefined;
 };
 
 type Phase = "gate" | "live" | "thinking" | "transition" | "done" | "disqualified";
 
 function InterviewScreen() {
   const navigate = useNavigate();
-  const askFollowUp = useServerFn(followUp);
-  const finalize = useServerFn(finalizeInterview);
-
   const [profile, setProfile] = useState<CandidateProfile | null>(null);
   const [neuro, setNeuro] = useState(false);
   const [name, setName] = useState<string>("");
@@ -100,10 +97,7 @@ function InterviewScreen() {
   const events = useRef<Violation[]>([]);
   const strikes = useRef(0);
   const remaining = useRef(timerSeconds);
-  const mainIdx = useRef(0);
-  const followCount = useRef(0);
-  const followTarget = useRef(1);
-  const followHistory = useRef<string[]>([]);
+  const candidateName = useRef("Candidate");
 
   useEffect(() => {
     const raw = sessionStorage.getItem("boardroom.profile");
@@ -112,23 +106,30 @@ function InterviewScreen() {
       return;
     }
     setProfile(JSON.parse(raw) as CandidateProfile);
-    void supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) return;
-      const { data: p } = await supabase.from("profiles").select("full_name, neurodivergent").eq("id", data.user.id).maybeSingle();
-      setNeuro(Boolean(p?.neurodivergent));
-      setName(p?.full_name ?? data.user.email ?? "Candidate");
-    });
+    const user = getLocalUser();
+    if (user) {
+      let neuroSetting = false;
+      try {
+        const stored = localStorage.getItem(`boardroom.neuro.${user.id}`);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          neuroSetting = Boolean(parsed.neurodivergent);
+        }
+      } catch {}
+      setNeuro(neuroSetting);
+      const displayName = user.name ?? user.email ?? "Candidate";
+      setName(displayName);
+      candidateName.current = displayName;
+    }
   }, [navigate]);
 
   const role = ROLES.find((r) => r.id === profile?.roleId) ?? ROLES[0]!;
-  const mains = useMemo(() => buildQuestionSet(role.id, questionsPerInterview), [role.id]);
 
   const persist = useCallback(async (extra: Record<string, unknown> = {}) => {
     if (!interviewId.current) return;
-    await supabase
-      .from("interviews")
-      .update({ answers: answers.current as never, integrity_events: events.current as never, warnings: strikes.current, ...extra })
-      .eq("id", interviewId.current);
+    await recordInterviewIntegrity(interviewId.current, events.current, typeof extra.status === "string" ? extra.status : undefined).catch((error) => {
+      console.error("Could not persist interview integrity events", error);
+    });
   }, []);
 
   /* ---------- Proctoring: one warning, then the test closes ---------- */
@@ -150,21 +151,11 @@ function InterviewScreen() {
     },
   });
 
-  const mainItem = (i: number): Item | null => {
-    const q = mains[i];
-    if (!q) return null;
-    return { id: q.id, text: q.text, stage: q.stage, kind: questionKind(q), mainIndex: i, isFollowUp: false };
-  };
-
-  const beginMain = (i: number) => {
-    mainIdx.current = i;
-    followCount.current = 0;
-    followHistory.current = [];
-    const q = mains[i];
-    // Only the second (core role) question gets follow-ups — exactly two.
-    followTarget.current = i === 1 ? 2 : 0;
-    return mainItem(i);
-  };
+  const asItem = (q: BackendQuestion): Item => ({
+    id: q._id || q.id, text: q.text, stage: q.stage.replaceAll("_", " "),
+    kind: q.questionType === "implementation" || q.questionType === "design" ? "derivation" : "reasoning",
+    mainIndex: answers.current.length, isFollowUp: q.questionType === "follow_up",
+  });
 
   const start = async () => {
     const ok = proctor.camReady || (await proctor.startCamera());
@@ -172,17 +163,20 @@ function InterviewScreen() {
     // Ask for the microphone now so no permission pop-up interrupts the session later.
     await navigator.mediaDevices.getUserMedia({ audio: true }).then((s) => s.getTracks().forEach((t) => t.stop())).catch(() => undefined);
     await document.documentElement.requestFullscreen?.().catch(() => undefined);
-    const { data: u } = await supabase.auth.getUser();
-    if (!u.user) return;
-    const { data } = await supabase
-      .from("interviews")
-      .insert({ candidate_id: u.user.id, candidate_name: name, role_id: role.id, role_title: role.title })
-      .select("id")
-      .single();
-    interviewId.current = data?.id ?? null;
-    setItem(beginMain(0));
-    remaining.current = timerSeconds;
-    setPhase("live");
+    const user = getLocalUser();
+    if (!user) return;
+    try {
+      if (!profile?.backendCandidateId || !profile.backendRoleId) throw new Error("Candidate or advertised post is missing from the backend profile. Return to application setup.");
+      const created = await createInterview(profile.backendCandidateId, profile.backendRoleId);
+      interviewId.current = created._id;
+      const started = await startInterview(created._id);
+      if (!started.question) throw new Error("The interview service did not return an opening question.");
+      setItem(asItem(started.question));
+      remaining.current = timerSeconds;
+      setPhase("live");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not start the interview.");
+    }
   };
 
   const goNext = (next: Item | null, msg: string) => {
@@ -196,9 +190,42 @@ function InterviewScreen() {
         proctor.stopAll();
         await persist();
         if (interviewId.current) {
-          await finalize({ data: { interviewId: interviewId.current } }).catch(() => undefined);
-          const { data: row } = await supabase.from("interviews").select("*").eq("id", interviewId.current).single();
-          if (row) setFinalReport(toFinalReport(row));
+          try {
+            const report = await getInterviewReport(interviewId.current);
+            const scorecard = (report.scorecard || {}) as Record<string, any>;
+            const competencies = (report.competencyScores || []) as Array<{ competency: string; score: number }>;
+            const rubric = competencies.map((c) => ({ label: c.competency, score: c.score }));
+            setFinalReport({
+              name: candidateName.current, roleTitle: role.title, date: new Date().toLocaleString(), status: "Completed",
+              overallScore: Number(report.overallScore ?? scorecard.overallScore ?? 0), rubric,
+              covered: (scorecard.strengths || []).map((s: any) => s.area || s.evidence || String(s)),
+              missing: (scorecard.gaps || []).map((s: any) => s.area || s.evidence || String(s)),
+              reasoningSummary: scorecard.explanation || scorecard.decisionSupport?.recommendationNote || "Evidence-based assessment generated by the interview service.",
+              languageSummary: "Language use is not part of the technical score.", languageNotes: [], integrity: events.current,
+              perQuestion: answers.current.map((a) => ({ stage: a.stage, question: a.question, answer: a.text || a.latex || "(not attempted)", score: a.score ?? null, note: a.evaluationNote || "See competency scorecard." })),
+            });
+            const sessionReportItem = {
+              id: interviewId.current || `session-${Date.now()}`,
+              role_title: role.title,
+              created_at: new Date().toISOString(),
+              status: "completed",
+              overall_score: Number(report.overallScore ?? scorecard.overallScore ?? 0),
+              report: {
+                overallScore: Number(report.overallScore ?? scorecard.overallScore ?? 0),
+                reasoningSummary: scorecard.explanation || scorecard.decisionSupport?.recommendationNote || "Evidence-based assessment generated by the interview service.",
+                languageSummary: "Language use is not part of the technical score.",
+              },
+              answers: answers.current,
+            };
+            const currentUser = getLocalUser();
+            if (currentUser) {
+              try {
+                const raw = localStorage.getItem(`boardroom.interviews.${currentUser.id}`);
+                const existing = raw ? JSON.parse(raw) : [];
+                localStorage.setItem(`boardroom.interviews.${currentUser.id}`, JSON.stringify([sessionReportItem, ...existing]));
+              } catch {}
+            }
+          } catch (error) { toast.error(error instanceof Error ? error.message : "The scorecard could not be loaded."); }
         }
         return;
       }
@@ -232,41 +259,21 @@ function InterviewScreen() {
     answers.current = [...answers.current, rec];
     void persist();
 
-    const wantFollowUp = followCount.current < followTarget.current;
     setPhase("thinking");
-    const res = await askFollowUp({
-      data: {
-        roleTitle: role.title,
-        question: item.text,
-        answer: answerText.slice(0, 8000),
-        history: followHistory.current.slice(-6),
-        wantFollowUp,
-        spoken: rec.spoken,
-      },
-    }).catch(() => null);
-    if (res?.languageNotes?.length) {
-      rec.languageNotes = res.languageNotes;
-      void persist();
-    }
     if (phaseRef.current === "disqualified") return;
 
     const lead = reason === "time-up" ? "Time's up" : "Response recorded";
-    if (wantFollowUp && res?.followUp) {
-      followCount.current += 1;
-      followHistory.current.push(res.followUp);
-      goNext(
-        {
-          id: `${mains[mainIdx.current]?.id}-f${followCount.current}`,
-          text: res.followUp,
-          stage: "Follow-up",
-          kind: res.kind === "derivation" ? "derivation" : "reasoning",
-          mainIndex: mainIdx.current,
-          isFollowUp: true,
-        },
-        `${lead} — the panel has a follow-up`,
-      );
-    } else {
-      goNext(beginMain(mainIdx.current + 1), `${lead} — moving to next question`);
+    try {
+      const result = await submitInterviewAnswer(interviewId.current!, item.id, answerText || "(not attempted)");
+      rec.score = Number(result.evaluation.score ?? 0);
+      rec.evaluationNote = typeof result.evaluation.reasoning === "string" ? result.evaluation.reasoning : "Answer assessed by the Python evaluator.";
+      void persist();
+      const verdict = rec.evaluationNote;
+      if (typeof verdict === "string") toast.message(verdict.slice(0, 180));
+      goNext(result.nextQuestion ? asItem(result.nextQuestion) : null, result.nextQuestion ? `${lead} — the panel has adapted its next question` : `${lead} — the assessment is complete`);
+    } catch (error) {
+      setPhase("live");
+      toast.error(error instanceof Error ? error.message : "Could not submit your answer.");
     }
   };
 

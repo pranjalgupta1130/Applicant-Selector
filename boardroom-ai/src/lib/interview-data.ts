@@ -45,6 +45,8 @@ export type CandidateProfile = {
   resumeName: string | null;
   yearsExperience: string;
   skills: string[];
+  backendCandidateId?: string;
+  backendRoleId?: string;
 };
 
 export const ROLES: Role[] = [
@@ -75,6 +77,13 @@ export const ROLES: Role[] = [
     department: "Missile Systems (RCI)",
     openings: 2,
     summary: "State estimation, nonlinear control and seeker integration.",
+  },
+  {
+    id: "role-cyber-sci-b",
+    title: "Scientist 'B' — Cybersecurity",
+    department: "Cyber Systems & Network Security",
+    openings: 2,
+    summary: "Threat modelling, secure networks and incident response.",
   },
 ];
 

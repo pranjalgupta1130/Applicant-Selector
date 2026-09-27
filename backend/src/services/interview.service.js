@@ -2,15 +2,33 @@ const { Interview, Candidate, Role, InterviewQuestion, Answer, Evaluation, Repor
 const { isValidId } = require('../storage/jsonStore');
 const aiService = require('./ai.service');
 
-const STAGES = ['ice_breaker', 'fundamentals', 'technical', 'deep_dive', 'scenario', 'closing'];
-const VALID_STAGES = STAGES;
+const STAGES = [
+  'ice_breaker',
+  'applicant_validation',
+  'core_technical',
+  'deep_dive',
+  'application_scenario',
+  'system_engineering',
+  'techno_managerial',
+  'closing'
+];
+
+const VALID_STAGES = [
+  ...STAGES,
+  'fundamentals',
+  'technical',
+  'scenario',
+  'expertise_validation',
+  'role_technical',
+  'scenario_managerial'
+];
 
 /**
  * Pure deterministic strategy helper based on evaluation performance (Task 8 Phase 3 & 4)
  */
 const determineNextQuestionStrategy = (evaluation, currentQuestion, interview) => {
   const totalScore = typeof evaluation.total === 'number' ? evaluation.total : 6.8;
-  const currentStage = (currentQuestion && currentQuestion.stage) || (interview && interview.currentStage) || 'fundamentals';
+  const currentStage = (currentQuestion && currentQuestion.stage) || (interview && interview.currentStage) || 'ice_breaker';
   const currentDifficulty = Number(currentQuestion && currentQuestion.difficulty) || 3;
   const currentCompetency = (currentQuestion && currentQuestion.competency) || 'General Technical Competency';
 
@@ -36,33 +54,36 @@ const determineNextQuestionStrategy = (evaluation, currentQuestion, interview) =
 
   // Determine stage progression
   let stageIndex = STAGES.indexOf(currentStage);
-  if (stageIndex === -1) stageIndex = 1; // default 'fundamentals'
+  if (stageIndex === -1) {
+    // Check aliases
+    if (currentStage === 'fundamentals' || currentStage === 'expertise_validation') stageIndex = 1;
+    else if (currentStage === 'technical' || currentStage === 'role_technical') stageIndex = 2;
+    else if (currentStage === 'scenario' || currentStage === 'scenario_managerial') stageIndex = 4;
+    else stageIndex = 0;
+  }
 
   let targetStage = currentStage;
-  const questionsAskedInStage = (interview && interview.questionsAsked) || 1;
-
-  if (currentStage === 'ice_breaker') {
-    targetStage = 'fundamentals';
-    targetDifficulty = 3;
-  } else if (currentStage === 'scenario' && totalScore >= 6.0) {
-    targetStage = 'closing';
-    targetDifficulty = 3;
-  } else if (stageIndex < STAGES.length - 2 && (totalScore >= 8.0 || questionsAskedInStage >= 3)) {
-    // Advance to next stage if performance is high or stage threshold met
+  if (stageIndex < STAGES.length - 1) {
     targetStage = STAGES[stageIndex + 1];
-    targetDifficulty = 3;
+  } else {
+    targetStage = 'closing';
   }
 
   // Determine target competency
-  let targetCompetency = currentCompetency;
+  let targetCompetency = currentCompetency || targetStage;
   if (Array.isArray(interview && interview.targetCompetencies) && interview.targetCompetencies.length > 0) {
-    const comps = interview.targetCompetencies;
-    const currIdx = comps.indexOf(currentCompetency);
-    if (currIdx !== -1 && currIdx + 1 < comps.length) {
-      targetCompetency = comps[currIdx + 1];
-    } else {
-      targetCompetency = comps[0];
+    const comps = interview.targetCompetencies.filter(c => typeof c === 'string' && c.trim().length > 0);
+    if (comps.length > 0) {
+      const currIdx = comps.indexOf(currentCompetency);
+      if (currIdx !== -1 && currIdx + 1 < comps.length) {
+        targetCompetency = comps[currIdx + 1];
+      } else {
+        targetCompetency = comps[0];
+      }
     }
+  }
+  if (!targetCompetency || typeof targetCompetency !== 'string' || !targetCompetency.trim()) {
+    targetCompetency = targetStage;
   }
 
   return {
@@ -567,7 +588,7 @@ const submitAnswer = async (interviewId, answerData) => {
       });
     }
   } catch (err) {
-    console.warn(`[Interview Service] Failed to generate/persist next question (${err.message}). Controlled fallback: nextQuestion = null.`);
+    console.error(`[Interview Service] Failed to generate/persist next question: ${err.message}`, err);
     nextQuestion = null;
   }
 

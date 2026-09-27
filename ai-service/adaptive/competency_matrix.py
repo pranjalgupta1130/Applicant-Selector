@@ -92,6 +92,60 @@ ROLE_COMPETENCY_PROFILES: Dict[str, Dict[str, Any]] = {
             "avionics_communication": 1,
             "techno_managerial": 1
         }
+    },
+    "drdo_scientist_radar": {
+        "title": "Scientist C — Radar Signal Processing",
+        "domain": "electronics_radar",
+        "weights": {
+            "radar_rf_systems": 0.25,
+            "digital_signal_processing": 0.25,
+            "embedded_realtime_systems": 0.20,
+            "system_engineering": 0.15,
+            "techno_managerial": 0.15
+        },
+        "min_evidence_target": {
+            "radar_rf_systems": 1,
+            "digital_signal_processing": 1,
+            "embedded_realtime_systems": 1,
+            "system_engineering": 1,
+            "techno_managerial": 1
+        }
+    },
+    "drdo_scientist_aerospace": {
+        "title": "Scientist B — Aerodynamics",
+        "domain": "aerospace_aerodynamics",
+        "weights": {
+            "aerodynamics_fundamentals": 0.25,
+            "fluid_mechanics_cfd": 0.25,
+            "aerodynamic_analysis": 0.20,
+            "system_engineering": 0.15,
+            "techno_managerial": 0.15
+        },
+        "min_evidence_target": {
+            "aerodynamics_fundamentals": 1,
+            "fluid_mechanics_cfd": 1,
+            "aerodynamic_analysis": 1,
+            "system_engineering": 1,
+            "techno_managerial": 1
+        }
+    },
+    "drdo_scientist_cyber": {
+        "title": "Scientist B — Cybersecurity",
+        "domain": "cyber_computing",
+        "weights": {
+            "cybersecurity_fundamentals": 0.25,
+            "network_security": 0.25,
+            "system_resilience": 0.20,
+            "system_engineering": 0.15,
+            "techno_managerial": 0.15
+        },
+        "min_evidence_target": {
+            "cybersecurity_fundamentals": 1,
+            "network_security": 1,
+            "system_resilience": 1,
+            "system_engineering": 1,
+            "techno_managerial": 1
+        }
     }
 }
 
@@ -107,15 +161,12 @@ ROLE_ALIASES: Dict[str, str] = {
     "software engineer": "software_engineer",
     "sde": "software_engineer",
     "general": "software_engineer",
-    # DRDO / RAC aliases
-    "scientist_b": "scientist_b_ece",
-    "scientist b": "scientist_b_ece",
+    "drdo_scientist_aerospace": "drdo_scientist_aerospace",
+    "drdo_scientist_radar": "drdo_scientist_radar",
+    "drdo_scientist_cyber": "drdo_scientist_cyber",
     "scientist_b_ece": "scientist_b_ece",
-    "scientist b ece": "scientist_b_ece",
-    "drdo": "scientist_b_ece",
-    "drdo_scientist_b": "scientist_b_ece",
-    "radar": "scientist_b_radar_embedded",
-    "radar engineer": "scientist_b_radar_embedded",
+    "radar": "drdo_scientist_radar",
+    "radar engineer": "drdo_scientist_radar",
     "embedded engineer": "scientist_b_ece",
     "drdo-rac-2026-ece-001": "scientist_b_ece"
 }
@@ -132,6 +183,17 @@ class RoleCompetencyMatrix:
         if not role_id_or_title:
             return "backend_engineer"
         clean = role_id_or_title.strip().lower().replace("-", "_")
+
+        # Prioritize explicit domain terms first
+        if any(k in clean for k in ("aero", "cfd", "fluid", "aerodynamic", "drdo_scientist_aerospace")):
+            return "drdo_scientist_aerospace"
+        if any(k in clean for k in ("radar", "dsp", "signal", "rf", "drdo_scientist_radar")):
+            return "drdo_scientist_radar"
+        if any(k in clean for k in ("cyber", "security", "resilience", "drdo_scientist_cyber")):
+            return "drdo_scientist_cyber"
+        if any(k in clean for k in ("ece", "electronics")):
+            return "scientist_b_ece"
+
         if clean in ROLE_COMPETENCY_PROFILES:
             return clean
         for alias, target in ROLE_ALIASES.items():

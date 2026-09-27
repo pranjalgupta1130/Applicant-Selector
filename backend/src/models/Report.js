@@ -39,6 +39,7 @@ class Report {
       strengths: Array.isArray(doc.strengths) ? doc.strengths : [],
       gaps: Array.isArray(doc.gaps) ? doc.gaps : [],
       recommendations: Array.isArray(doc.recommendations) ? doc.recommendations : [],
+      scorecard: doc.scorecard || null,
       createdAt: now,
       updatedAt: now
     };
