@@ -212,6 +212,54 @@ const evaluateAnswer = async ({
     const response = await postToAiService('/api/ai/evaluate-answer', payload);
     const data = response.data || response;
 
+    // The AI service returns core.schemas.EvaluationResult: a 0-100 `score`
+    // with the five component scores nested under `subScores`, and the prose
+    // rationale in `reasoning`. This layer works in 1-10 with the components at
+    // the top level, so translate rather than fall through.
+    //
+    // Without this branch `data.relevance` is undefined, the check below fails,
+    // and execution reaches the hardcoded fallback at the end of the function --
+    // silently, because nothing threw. Every candidate then scores 6.8/10 with
+    // expectedConcepts[0] reported as covered, which looks like a working
+    // product rather than a broken one.
+    if (data && data.subScores && typeof data.subScores === 'object') {
+      const to10 = (value, fallback = 7) => {
+        const n = Number(value);
+        if (!Number.isFinite(n)) return fallback;
+        return Math.min(10, Math.max(1, Number((n / 10).toFixed(1))));
+      };
+      const sub = data.subScores;
+
+      let confidenceNum = 0.85;
+      if (typeof data.confidence === 'number' && Number.isFinite(data.confidence)) {
+        confidenceNum = Math.min(1, Math.max(0, data.confidence > 1 ? data.confidence / 10 : data.confidence));
+      }
+
+      return {
+        relevance: to10(sub.relevance),
+        technicalCorrectness: to10(sub.technicalCorrectness),
+        completeness: to10(sub.completeness),
+        reasoning: to10(sub.reasoning),
+        clarity: to10(sub.clarity),
+        total: to10(data.score),
+        coveredConcepts: Array.isArray(data.coveredConcepts) ? data.coveredConcepts : [],
+        missingConcepts: Array.isArray(data.missingConcepts) ? data.missingConcepts : [],
+        // `data.reasoning` is the evaluator's prose; `subScores.reasoning` is the
+        // numeric sub-score. Same word, different things -- do not mix them up.
+        feedback: typeof data.reasoning === 'string' && data.reasoning.trim()
+          ? data.reasoning
+          : 'Answer evaluated by the evaluation subsystem.',
+        confidence: confidenceNum,
+        // Surfaced so the interviewer UI can show the audit trail and say when a
+        // score came from the deterministic path rather than the LLM.
+        evaluationMode: typeof data.evaluationMode === 'string' ? data.evaluationMode : undefined,
+        flags: Array.isArray(data.flags) ? data.flags : undefined,
+        scoreBreakdown: data.scoreBreakdown || undefined,
+        partialConcepts: Array.isArray(data.partialConcepts) ? data.partialConcepts : undefined,
+        conceptDetail: Array.isArray(data.conceptDetail) ? data.conceptDetail : undefined
+      };
+    }
+
     if (data && typeof data.relevance === 'number') {
       const relevance = Math.min(10, Math.max(1, Number(data.relevance) || 7));
       const technicalCorrectness = Math.min(10, Math.max(1, Number(data.technicalCorrectness) || 7));
