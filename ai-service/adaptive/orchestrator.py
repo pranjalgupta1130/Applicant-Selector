@@ -242,10 +242,15 @@ class InterviewOrchestrator:
 
             if next_question and next_question.id:
                 state.used_fallback_ids.append(next_question.id)
+
+            state.current_stage = policy_decision.next_stage
+            state.current_competency = policy_decision.next_competency
+            state.difficulty = policy_decision.next_difficulty
         else:
             # Authoritative termination: harmonize strategy
             policy_decision.strategy = "conclude_interview"
             trace.strategy = "conclude_interview"
+            state.current_stage = "closing"
 
         decision_obj = DecisionObject(
             strategy=policy_decision.strategy,

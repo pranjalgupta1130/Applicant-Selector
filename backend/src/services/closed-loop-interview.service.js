@@ -165,6 +165,10 @@ async function submitAnswer(id, body) {
   });
   interview.aiState = result.updatedState;
   const nextQuestion = await persistQuestion(interview, result.nextQuestion);
+  const pythonStage = result.nextQuestion ? result.nextQuestion.stage : (result.decision?.nextStage || 'closing');
+  const nodePersistedStage = interview.currentStage;
+  const nextRequestStage = nextQuestion ? nextQuestion.stage : 'closing';
+  console.info('[STAGE TRACK]', JSON.stringify({ PYTHON_STAGE: pythonStage, NODE_PERSISTED_STAGE: nodePersistedStage, NEXT_REQUEST_STAGE: nextRequestStage }));
   let report = null;
   if (result.termination?.shouldTerminate || !result.nextQuestion) {
     report = await finalizeInterview(interview);

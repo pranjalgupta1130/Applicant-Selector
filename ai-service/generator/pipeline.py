@@ -31,8 +31,13 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------
 
 META_QUESTION_PATTERNS = [
-    r"ice_breaker\s+feature",
+    r"ice_breaker",
+    r"applicant_validation",
+    r"stage\s+progression",
+    r"interview\s+stage",
     r"design(?:ing)?\s+an?\s+(?:ice\s*breaker|interview)",
+    r"design(?:ing)?\s+and\s+test(?:ing)?",
+    r"reliable\s+ice_breaker",
     r"good\s+ice\s*breaker",
     r"kinds?\s+thing",
     r"kind\s+of\s+thing",
