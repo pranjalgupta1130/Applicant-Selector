@@ -222,6 +222,15 @@ async def generate_candidate_scorecard(req: ScorecardRequest):
             custom_weights=req.competencyWeights
         )
 
+        import logging
+        logging.getLogger(__name__).info(
+            f"[REPORT TRACE] location=Python scorecard_engine candidateId={req.candidate.id} "
+            f"roleId={req.role.id} turnCount={len(state.previous_questions)} "
+            f"evaluatedTurnCount={len(state.score_history)} scorecardOverall={scorecard.overallScore} "
+            f"coverage={scorecard.coverage.overallEvidenceCoverage} confidence={scorecard.coverage.overallConfidence} "
+            f"competencies={[c.competency for c in scorecard.competencies]}"
+        )
+
         return ScorecardResponse(
             scorecard=scorecard,
             competencies=scorecard.competencies,

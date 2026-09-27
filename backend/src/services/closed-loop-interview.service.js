@@ -179,27 +179,88 @@ async function submitAnswer(id, body) {
 }
 
 async function finalizeInterview(interview) {
-  if (interview.scorecard) return interview.scorecard;
   const scorecard = await callPython('interview/scorecard', { interviewState: interview.aiState, candidate: interview.candidateSnapshot, role: interview.roleSnapshot });
   interview.scorecard = scorecard;
   interview.status = 'completed';
-  interview.completedAt = new Date().toISOString();
+  if (!interview.completedAt) interview.completedAt = new Date().toISOString();
   await interview.save();
+
   const core = scorecard.scorecard || {};
-  const report = await Report.create({
-    interviewId: interview._id, overallScore: core.subjectKnowledgeScore ?? core.overallScore ?? 0,
-    competencyScores: (scorecard.competencies || []).map((c) => ({ competency: c.competency || c.name, score: c.score })),
-    strengths: (scorecard.strengths || []).map((s) => typeof s === 'string' ? s : s.description || s.evidence || JSON.stringify(s)),
-    gaps: (scorecard.gaps || []).map((s) => typeof s === 'string' ? s : s.description || s.evidence || JSON.stringify(s)),
-    recommendations: [scorecard.explanation || scorecard.decisionSupport?.summary || 'Review evidence and use panel judgment.'], scorecard
-  });
+  const overallScore = Number(core.overallScore ?? core.subjectKnowledgeScore ?? scorecard.overallScore ?? 0);
+  const coverage = scorecard.coverage?.overallEvidenceCoverage ?? scorecard.coverage?.evidenceCoverage ?? 0.65;
+  const confidence = scorecard.coverage?.overallConfidence ?? scorecard.coverage?.confidence ?? 0.60;
+  const competencies = (scorecard.competencies || []).map((c) => ({
+    competency: c.competency || c.name,
+    score: c.score !== undefined ? c.score : null,
+    status: c.status || (c.score === null ? 'untested' : 'evaluated'),
+    confidence: c.confidence !== undefined ? c.confidence : 0
+  }));
+  const strengths = (scorecard.strengths || []).map((s) => typeof s === 'string' ? s : s.description || s.evidence || s.area || JSON.stringify(s));
+  const gaps = (scorecard.gaps || []).map((s) => typeof s === 'string' ? s : s.description || s.evidence || s.area || JSON.stringify(s));
+
+  let report = await Report.findOne({ interviewId: interview._id });
+  if (report) {
+    report.overallScore = overallScore;
+    report.competencyScores = competencies;
+    report.strengths = strengths;
+    report.gaps = gaps;
+    report.scorecard = scorecard;
+  } else {
+    report = await Report.create({
+      interviewId: interview._id,
+      overallScore,
+      competencyScores: competencies,
+      strengths,
+      gaps,
+      recommendations: [scorecard.explanation || scorecard.decisionSupport?.summary || 'Review evidence and use panel judgment.'],
+      scorecard
+    });
+  }
+
+  const turnCount = interview.questionSequence || 0;
+  const evaluatedTurnCount = (interview.aiState?.score_history || []).length;
+  console.info('[REPORT TRACE]', JSON.stringify({
+    location: 'Node finalizeInterview',
+    candidateId: interview.candidateSnapshot?.id || interview.candidateId,
+    roleId: interview.roleSnapshot?.id || interview.roleId,
+    interviewId: interview._id,
+    turnCount,
+    evaluatedTurnCount,
+    scorecardOverall: overallScore,
+    coverage,
+    confidence,
+    competencies,
+    reportId: report._id || report.id
+  }));
+
   return report;
 }
 
 async function getReport(id) {
   const interview = await getInterview(id);
-  if (interview.status !== 'completed') { const error = new Error('Interview scorecard is not ready'); error.statusCode = 409; throw error; }
-  return await Report.findOne({ interviewId: id });
+  let report = await Report.findOne({ interviewId: id });
+  if (!report || interview.status !== 'completed' || !interview.scorecard) {
+    report = await finalizeInterview(interview);
+  }
+  const turnCount = interview.questionSequence || 0;
+  const evaluatedTurnCount = (interview.aiState?.score_history || []).length;
+  const scorecard = report.scorecard || {};
+  const coverage = scorecard.coverage?.overallEvidenceCoverage ?? 0.65;
+  const confidence = scorecard.coverage?.overallConfidence ?? 0.60;
+  console.info('[REPORT TRACE]', JSON.stringify({
+    location: 'Node GET report',
+    candidateId: interview.candidateSnapshot?.id || interview.candidateId,
+    roleId: interview.roleSnapshot?.id || interview.roleId,
+    interviewId: interview._id,
+    turnCount,
+    evaluatedTurnCount,
+    scorecardOverall: report.overallScore,
+    coverage,
+    confidence,
+    competencies: report.competencyScores,
+    reportId: report._id || report.id
+  }));
+  return report;
 }
 
 async function recordIntegrity(id, events, status) {

@@ -27,7 +27,7 @@ export function FinalReportView({ report }: { report: FinalReport }) {
           {report.rubric.map((r) => (
             <div key={r.label} className="rounded-lg border border-border bg-secondary/60 p-3">
               <div className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">{r.label}</div>
-              <div className="font-display text-2xl text-foreground">{r.score}</div>
+              <div className="font-display text-2xl text-foreground">{r.score !== null && r.score !== undefined ? r.score : "N/A"}</div>
             </div>
           ))}
         </div>

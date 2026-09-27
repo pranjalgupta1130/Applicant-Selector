@@ -35,14 +35,14 @@ export function toFinalReport(iv: Row): FinalReport {
   const answers = (iv.answers ?? []) as any[];
   const pq = (r["perQuestion"] ?? []) as any[];
   return {
-    name: iv.candidate_name ?? "Candidate",
-    roleTitle: iv.role_title,
+    name: iv.candidate_name ?? r["name"] ?? "Candidate",
+    roleTitle: iv.role_title || r["roleTitle"] || "Scientist B",
     date: new Date(iv.completed_at ?? iv.created_at).toLocaleString(),
     status: iv.status === "completed" ? "Completed" : iv.status === "disqualified" ? "Caught cheating" : "In progress",
-    overallScore: iv.overall_score,
+    overallScore: iv.overall_score ?? r["overallScore"] ?? null,
     rubric: r["rubric"] ?? [],
-    covered: r["coveredConcepts"] ?? [],
-    missing: r["missingConcepts"] ?? [],
+    covered: r["covered"] ?? r["coveredConcepts"] ?? [],
+    missing: r["missing"] ?? r["missingConcepts"] ?? [],
     reasoningSummary:
       r["reasoningSummary"] ??
       (iv.status === "disqualified" ? "Session terminated after a second integrity violation." : "Evaluation pending."),
@@ -53,8 +53,8 @@ export function toFinalReport(iv: Row): FinalReport {
       stage: a.stage ?? "",
       question: a.question ?? "",
       answer: a.text || a.latex || (a.hasDrawing ? "[Handwritten derivation on chalkboard]" : "(not attempted)"),
-      score: pq[i]?.score ?? null,
-      note: pq[i]?.note ?? "",
+      score: pq[i]?.score ?? a.score ?? null,
+      note: pq[i]?.note ?? a.evaluationNote ?? "",
     })),
   };
 }
