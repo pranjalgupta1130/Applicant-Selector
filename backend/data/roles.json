@@ -1,0 +1,20 @@
+[
+  {
+    "_id": "6dbdb017316ade9d4530b7f8",
+    "title": "Backend / Full-Stack Software Engineer",
+    "description": "Primary hackathon demo role for evaluating candidate proficiency across API design, database architecture, CS fundamentals, system design, and techno-managerial scenarios.",
+    "difficulty": 3,
+    "competencies": [
+      "68da84f2723c3d8409ed6a93",
+      "41b1cb38820f07929713b1c7",
+      "134bfe15fdc2eb422b9a4c16",
+      "08e8762acdc43bc766cea58c",
+      "07fdb0ac9e3bc7cce05d8b76",
+      "e6a96d8901d5a4d8cb7fea15",
+      "a444fc1b4aa1d140c33c4362"
+    ],
+    "isActive": true,
+    "createdAt": "2026-09-27T12:55:22.562Z",
+    "updatedAt": "2026-09-27T12:55:22.562Z"
+  }
+]

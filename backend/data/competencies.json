@@ -1,0 +1,65 @@
+[
+  {
+    "_id": "68da84f2723c3d8409ed6a93",
+    "name": "Programming",
+    "description": "Core programming syntax, OOP principles, data structures, and code execution complexity.",
+    "category": "technical",
+    "weight": 1,
+    "createdAt": "2026-09-27T12:55:22.526Z",
+    "updatedAt": "2026-09-27T12:55:22.526Z"
+  },
+  {
+    "_id": "41b1cb38820f07929713b1c7",
+    "name": "Backend",
+    "description": "RESTful API architecture, HTTP protocol, authentication/authorization, and backend middleware.",
+    "category": "technical",
+    "weight": 1,
+    "createdAt": "2026-09-27T12:55:22.533Z",
+    "updatedAt": "2026-09-27T12:55:22.533Z"
+  },
+  {
+    "_id": "134bfe15fdc2eb422b9a4c16",
+    "name": "Database",
+    "description": "SQL vs NoSQL databases, indexing strategies, transactions, normalization, and query optimization.",
+    "category": "technical",
+    "weight": 1,
+    "createdAt": "2026-09-27T12:55:22.537Z",
+    "updatedAt": "2026-09-27T12:55:22.537Z"
+  },
+  {
+    "_id": "08e8762acdc43bc766cea58c",
+    "name": "System Design",
+    "description": "System scalability, distributed caching, message queues, load balancing, and high availability.",
+    "category": "technical",
+    "weight": 1,
+    "createdAt": "2026-09-27T12:55:22.542Z",
+    "updatedAt": "2026-09-27T12:55:22.542Z"
+  },
+  {
+    "_id": "07fdb0ac9e3bc7cce05d8b76",
+    "name": "CS Fundamentals",
+    "description": "Operating systems principles, computer networking, processes/threads, and memory management.",
+    "category": "fundamentals",
+    "weight": 1,
+    "createdAt": "2026-09-27T12:55:22.547Z",
+    "updatedAt": "2026-09-27T12:55:22.547Z"
+  },
+  {
+    "_id": "e6a96d8901d5a4d8cb7fea15",
+    "name": "Problem Solving",
+    "description": "Algorithmic reasoning, trade-off evaluation, edge case handling, and systematic debugging.",
+    "category": "technical",
+    "weight": 1,
+    "createdAt": "2026-09-27T12:55:22.552Z",
+    "updatedAt": "2026-09-27T12:55:22.552Z"
+  },
+  {
+    "_id": "a444fc1b4aa1d140c33c4362",
+    "name": "Managerial / Scenario",
+    "description": "Production incident handling, technical debt prioritization, team collaboration, and decision-making.",
+    "category": "managerial",
+    "weight": 1,
+    "createdAt": "2026-09-27T12:55:22.557Z",
+    "updatedAt": "2026-09-27T12:55:22.557Z"
+  }
+]
