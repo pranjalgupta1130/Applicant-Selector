@@ -6,6 +6,8 @@ from evaluator.answer_evaluator import (
     GeminiAnswerEvaluator,
     AnswerEvaluationAdapter
 )
+from evaluator.real_evaluator import RealAnswerEvaluator, get_default_evaluator
+from evaluator.scoring import WEIGHTS, LLMSubScores, score_answer
 
 __all__ = [
     "QuestionRelevanceEvaluator",
@@ -13,5 +15,10 @@ __all__ = [
     "MockAnswerEvaluator",
     "DeterministicAnswerEvaluator",
     "GeminiAnswerEvaluator",
-    "AnswerEvaluationAdapter"
+    "AnswerEvaluationAdapter",
+    "RealAnswerEvaluator",
+    "get_default_evaluator",
+    "score_answer",
+    "WEIGHTS",
+    "LLMSubScores",
 ]

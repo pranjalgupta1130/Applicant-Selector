@@ -12,6 +12,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from core.config import settings
 from api.routes import router as api_router, _retriever
+from api.evaluation_routes import router as evaluation_router
 
 app = FastAPI(
     title="BoardRoom AI — RAG & Question Generation Service",
@@ -30,6 +31,7 @@ app.add_middleware(
 )
 
 app.include_router(api_router)
+app.include_router(evaluation_router)
 
 
 @app.get("/health", tags=["Health"])

@@ -189,7 +189,31 @@ class AdaptiveContextRequest(BaseModel):
 # Phase C: Closed-Loop Turn & Orchestration Contracts
 # ---------------------------------------------------------
 
+class AnswerSubScores(BaseModel):
+    """Section 7.2 sub-scores. The weighted total is computed deterministically."""
+    relevance: int = Field(ge=0, le=100, description="Weight 30%")
+    technicalCorrectness: int = Field(ge=0, le=100, description="Weight 30%")
+    completeness: int = Field(ge=0, le=100, description="Weight 20%")
+    reasoning: int = Field(ge=0, le=100, description="Weight 10%")
+    clarity: int = Field(ge=0, le=100, description="Weight 10%")
+
+
+class ConceptCoverageDetail(BaseModel):
+    """Per-concept audit trail: evidence is the candidate's own best-matching sentence."""
+    concept: str
+    score: float = Field(ge=0.0, le=1.0, description="Similarity to the best-matching sentence")
+    covered: bool = False
+    partial: bool = False
+    evidence: str = Field(default="", description="Sentence from the answer that matched")
+
+
 class EvaluationResult(BaseModel):
+    """
+    Answer evaluation contract (Phase C). The first five fields are the frozen
+    core consumed by the orchestrator and scorecard engine. Everything below
+    them is additive detail from the evaluation subsystem (Member 4) with safe
+    defaults, so any producer that only fills the core stays valid.
+    """
     score: int = Field(..., ge=0, le=100, description="Candidate answer score (0-100)")
     coveredConcepts: List[str] = Field(default_factory=list, description="Concepts successfully demonstrated in answer")
     missingConcepts: List[str] = Field(default_factory=list, description="Concepts missing or inadequately addressed")
@@ -200,6 +224,15 @@ class EvaluationResult(BaseModel):
     relevance: str = Field(default="relevant", description="Evaluation of relevance: directly_relevant | partially_relevant | off_topic")
     depth: str = Field(default="adequate", description="Evaluation of technical depth: deep | adequate | shallow")
     isFallback: bool = Field(default=False, description="Flag indicating if deterministic fallback was used instead of primary LLM")
+
+    # --- Additive explainability fields (optional; default-safe) -------------
+    subScores: Optional[AnswerSubScores] = Field(default=None, description="Section 7.2 component scores behind the total")
+    partialConcepts: List[str] = Field(default_factory=list, description="Concepts partially addressed (half credit)")
+    conceptDetail: List[ConceptCoverageDetail] = Field(default_factory=list, description="Per-concept coverage with evidence sentences")
+    scoreBreakdown: Dict[str, Any] = Field(default_factory=dict, description="Weights, weighted contributions, guards applied, final total")
+    flags: List[str] = Field(default_factory=list, description="Deterministic guardrails triggered (e.g. off_topic, factually_incorrect)")
+    evaluationMode: str = Field(default="unspecified", description="llm_assisted | deterministic | mock | external")
+    strategyHint: Optional[str] = Field(default=None, description="Advisory hint for the adaptive layer; the policy engine still decides")
 
 
 class DecisionObject(BaseModel):
@@ -422,5 +455,3 @@ class ScorecardResponse(BaseModel):
     roleAlignment: RoleAlignmentAnalysis
     decisionSupport: DecisionSupportReport
     explanation: str
-
-
