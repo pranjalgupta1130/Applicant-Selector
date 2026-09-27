@@ -331,9 +331,24 @@ Respond with valid JSON according to the schema."""
         """
         selected_chunk: Optional[RetrievalResult] = None
         selected_question_text = ""
+        target_domain = getattr(role, "domain", None)
 
-        # Find best chunk that has sample questions not yet asked
+        # Find best chunk that has sample questions not yet asked.
+        #
+        # The chunk MUST match the requested competency. Without this filter the
+        # retriever's top hit wins even when it belongs to another competency --
+        # and because expectedConcepts/rubric are then taken from that chunk, the
+        # question ends up labelled with one competency while carrying another
+        # one's concepts. Evaluation then judges the answer against concepts the
+        # question never asked about, scores it near zero, and the adaptive layer
+        # probes those same stale concepts forever. Most visible under TF-IDF
+        # retrieval (no embeddings), where the ice-breaker chunk often ranks top.
         for chunk in retrieved_chunks:
+            if chunk.competency != competency:
+                continue
+            chunk_domain = getattr(chunk, "domain", None)
+            if target_domain and chunk_domain and chunk_domain != target_domain:
+                continue
             raw_chunk = self.retriever.get_chunk_by_id(chunk.chunk_id)
             if raw_chunk and raw_chunk.sample_questions:
                 for q in raw_chunk.sample_questions:
@@ -345,7 +360,6 @@ Respond with valid JSON according to the schema."""
                 break
 
         # If all retrieved questions were already asked, pick from any chunk in this competency and domain
-        target_domain = getattr(role, "domain", None)
         if not selected_question_text:
             for c in self.retriever.chunks:
                 c_domain = getattr(c, "domain", None)
