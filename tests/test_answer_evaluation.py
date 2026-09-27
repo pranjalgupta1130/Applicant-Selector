@@ -93,9 +93,25 @@ def test_default_evaluator_is_still_the_mock():
     assert isinstance(get_default_evaluator(), MockAnswerEvaluator)
 
 
-def test_adapter_still_defaults_to_mock_when_nothing_passed():
-    """Existing orchestrator behaviour is unchanged by this subsystem."""
-    assert isinstance(AnswerEvaluationAdapter().fallback_evaluator, MockAnswerEvaluator)
+def test_this_subsystem_does_not_hijack_the_adapter_default():
+    """
+    Existing orchestrator behaviour is unchanged by this subsystem.
+
+    Deliberately asserts what this module must NOT do, rather than pinning the
+    project's choice of default: main now defaults the adapter to
+    GeminiAnswerEvaluator backed by MockAnswerEvaluator, and that is the
+    evaluation team's call to make. What matters here is that merging this
+    subsystem does not silently redirect the closed loop through
+    RealAnswerEvaluator -- that stays an explicit EVAL_USE_REAL=1 opt-in.
+    """
+    adapter = AnswerEvaluationAdapter()
+    installed = getattr(adapter, "evaluator", None) or getattr(
+        adapter, "fallback_evaluator", None
+    )
+    assert installed is not None, "adapter exposes no evaluator attribute"
+    assert not isinstance(installed, RealAnswerEvaluator), (
+        "merging this subsystem must not change the adapter's default evaluator"
+    )
 
 
 # ---------------------------------------------------------------------------
