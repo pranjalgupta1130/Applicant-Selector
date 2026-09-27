@@ -148,6 +148,19 @@ class QuestionRelevanceEvaluator:
         else:
             return 15, "Non-technical or completely unrelated to target role"
 
+    # Tokens that appear inside almost every skill phrase AND almost every
+    # technical question, so matching on them proves nothing about expertise.
+    # Without this filter a candidate listing "RF design" matches any question
+    # containing the word "design" -- which made an RF engineer score a
+    # direct-hit 95 on a JWT revocation question once token matching was added.
+    NON_DISCRIMINATING_SKILL_TOKENS = {
+        "design", "designing", "system", "systems", "engineering", "engineer",
+        "development", "developer", "technology", "technologies", "technical",
+        "analysis", "testing", "tools", "management", "project", "projects",
+        "work", "working", "experience", "based", "using", "with", "and",
+        "advanced", "basic", "general", "applied", "hardware", "software",
+    }
+
     @classmethod
     def _score_candidate_alignment(cls, q_lower: str, candidate: CandidateProfile, difficulty: int) -> Tuple[int, str]:
         """Checks alignment between question, candidate skills, claimed expertise, and experience."""
@@ -158,7 +171,19 @@ class QuestionRelevanceEvaluator:
                 cand_skills.extend([w.lower().strip(".,;:()") for w in claim.split() if len(w) > 4])
         if getattr(candidate, "specialization", None) and candidate.specialization:
             cand_skills.extend([w.lower().strip(".,;:()") for w in candidate.specialization.split() if len(w) > 4])
+        # Match on tokens as well as whole skill strings. A candidate listing
+        # "radar systems" must count as a match for a question mentioning
+        # "radar"; whole-string containment alone misses most real profiles and
+        # was a major reason genuinely well-targeted questions scored no better
+        # than mismatched ones.
         matched_skills = [s for s in cand_skills if s in q_lower]
+        if not matched_skills:
+            skill_tokens = set()
+            for s in cand_skills:
+                for tok in re.split(r"[^a-z0-9+#.-]+", s):
+                    if len(tok) > 3 and tok not in cls.NON_DISCRIMINATING_SKILL_TOKENS:
+                        skill_tokens.add(tok)
+            matched_skills = sorted(tok for tok in skill_tokens if tok in q_lower)
         has_eng_marker = any(marker in q_lower for marker in cls.GENERAL_ENGINEERING_MARKERS)
 
         # Non-technical question penalty
@@ -178,7 +203,13 @@ class QuestionRelevanceEvaluator:
         elif matched_skills and not exp_appropriate:
             return 75, f"Targets candidate skill ({matched_skills[0]}) but difficulty differs from candidate seniority"
         elif not matched_skills and exp_appropriate:
-            return 80, "Appropriate depth for candidate seniority within role scope"
+            # No overlap with anything the candidate claims. This factor exists
+            # to answer "is this question relevant to THIS candidate's
+            # expertise", so a complete miss cannot sit 15 points below a direct
+            # hit: at 80 the term barely moved the total, and an RF engineer
+            # asked about JWT revocation scored identically to a candidate with
+            # no skills listed at all.
+            return 55, "Technical and within role scope, but unrelated to any expertise the candidate claims"
         else:
             return 45, "Generic question with minimal personalization for candidate background"
 
